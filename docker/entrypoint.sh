@@ -20,7 +20,7 @@ fi
 
 npm run build
 
-chown -R smartsprout:www-data storage bootstrap/cache
+chown -R plantsyncweb:www-data storage bootstrap/cache
 chgrp -R www-data storage bootstrap/cache
 chmod -R ug+rwx storage bootstrap/cache
 
@@ -28,12 +28,12 @@ if ! grep -q "^APP_KEY=base64:" .env; then
     php artisan key:generate --no-interaction
 fi
 
-until pg_isready -h "${DB_HOST:-smart-sprout.database}" -p "${DB_PORT:-5432}" -U "${DB_USERNAME:-smart_sprout}" >/dev/null 2>&1; do
+until pg_isready -h "${DB_HOST:-plant-sync-web.database}" -p "${DB_PORT:-5432}" -U "${DB_USERNAME:-plant_sync_web}" >/dev/null 2>&1; do
     sleep 2
 done
 
 php artisan config:clear || true
 php artisan optimize || true
-php artisan migrate --force || true
+php artisan migrate --seed --force || true
 
 exec /usr/bin/supervisord -c /etc/supervisor/supervisord.conf

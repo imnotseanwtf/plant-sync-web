@@ -74,8 +74,8 @@ The app will be available at `http://localhost:8000`.
 
 PostgreSQL will be exposed on `localhost:5432` with these defaults:
 
-- Database: `smart_sprout_web`
-- Username: `smart_sprout`
+- Database: `plant_sync_web`
+- Username: `plant_sync_web`
 - Password: `secret`
 
 ### Stop the stack
@@ -95,7 +95,7 @@ docker compose down -v
 Run Laravel commands inside the app container:
 
 ```bash
-docker compose exec smart-sprout.app php artisan migrate
-docker compose exec smart-sprout.app php artisan db:seed
-docker compose exec smart-sprout.app php artisan test
+docker compose exec plant-sync-web.app php artisan migrate
+docker compose exec plant-sync-web.app php artisan db:seed
+docker compose exec plant-sync-web.app php artisan test
 ```

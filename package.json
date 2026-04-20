@@ -1,4 +1,5 @@
 {
+    "name": "plant-sync-web",
     "private": true,
     "type": "module",
     "scripts": {
