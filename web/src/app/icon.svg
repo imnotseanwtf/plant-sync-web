@@ -1,16 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <defs>
-    <linearGradient id="gg" x1="20" y1="20" x2="100" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#4ADE80"/><stop offset="1" stop-color="#047857"/></linearGradient>
-    <linearGradient id="bb" x1="28" y1="18" x2="108" y2="108" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#38BDF8"/><stop offset="1" stop-color="#0369A1"/></linearGradient>
-    <mask id="gap" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
-      <rect width="128" height="128" fill="#fff"/>
-      <path d="M64 16A24 24 0 0 1 64 64A24 24 0 0 0 64 112" stroke="#000" stroke-width="5" fill="none"/>
-    </mask>
-  </defs>
-  <g transform="rotate(-32 64 64)">
-    <g mask="url(#gap)">
-      <path d="M64 16A48 48 0 0 0 64 112A24 24 0 0 1 64 64A24 24 0 0 0 64 16Z" fill="url(#gg)"/>
-      <path d="M64 16A48 48 0 0 1 64 112A24 24 0 0 1 64 64A24 24 0 0 0 64 16Z" fill="url(#bb)"/>
-    </g>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="#0E4F5C"/>
+  <g transform="translate(24 18) scale(.67)" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 46V84A42 42 0 0 0 102 84V62"/>
+    <path d="M60 126V38C60 18 86 14 89 31C91 45 72 50 68 38C65 29 76 25 80 32"/>
+  </g>
+  <g transform="translate(24 18) scale(.67)" fill="#5BD36A">
+    <path d="M60 100C40 100 29 88 28 73C46 72 59 83 60 100Z"/>
+    <path d="M60 84C61 67 73 57 91 58C91 75 78 86 60 84Z"/>
   </g>
 </svg>
