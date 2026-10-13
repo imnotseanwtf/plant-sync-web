@@ -65,7 +65,7 @@ const lastDelta = (values: number[]) =>
 const tooltipLabel = (_: unknown, payload: readonly { payload?: unknown }[]) =>
   (payload?.[0]?.payload as Point | undefined)?.full;
 
-/** The starter's dotted area graph, showing soil moisture. */
+/** Soil moisture: area graph with a gradient fill. */
 function MoistureGraph({ data }: { data: Point[] }) {
   return (
     <Card>
@@ -89,15 +89,17 @@ function MoistureGraph({ data }: { data: Point[] }) {
                 content={<ChartTooltipContent labelFormatter={tooltipLabel} />}
               />
               <defs>
-                <DottedPattern id='moisture-dots' color='var(--color-moisture)' />
+                <linearGradient id='moisture-fill' x1='0' y1='0' x2='0' y2='1'>
+                  <stop offset='0%' stopColor='var(--color-moisture)' stopOpacity={0.55} />
+                  <stop offset='100%' stopColor='var(--color-moisture)' stopOpacity={0.05} />
+                </linearGradient>
               </defs>
               <Area
                 dataKey='moisture'
-                type='natural'
-                fill='url(#moisture-dots)'
-                fillOpacity={0.4}
+                type='linear'
+                fill='url(#moisture-fill)'
                 stroke='var(--color-moisture)'
-                strokeWidth={0.8}
+                strokeWidth={3}
               />
             </AreaChart>
           </ChartContainer>
@@ -107,7 +109,7 @@ function MoistureGraph({ data }: { data: Point[] }) {
   );
 }
 
-/** The starter's hatched bar graph, showing temperature. */
+/** Temperature: bar graph. */
 function TemperatureGraph({ data }: { data: Point[] }) {
   return (
     <Card>
@@ -130,56 +132,12 @@ function TemperatureGraph({ data }: { data: Point[] }) {
                 cursor={false}
                 content={<ChartTooltipContent indicator='dashed' labelFormatter={tooltipLabel} />}
               />
-              <Bar
-                dataKey='temperature'
-                fill='var(--color-temperature)'
-                shape={<HatchedBar />}
-                radius={4}
-              />
+              <Bar dataKey='temperature' fill='var(--color-temperature)' radius={4} />
             </BarChart>
           </ChartContainer>
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function DottedPattern({ id, color }: { id: string; color: string }) {
-  return (
-    <pattern id={id} x='0' y='0' width='7' height='7' patternUnits='userSpaceOnUse'>
-      <circle cx='5' cy='5' r='1.5' fill={color} opacity={0.5} />
-    </pattern>
-  );
-}
-
-function HatchedBar(props: React.SVGProps<SVGRectElement>) {
-  const { fill, x, y, width, height } = props;
-  return (
-    <>
-      <rect
-        rx={4}
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        stroke='none'
-        fill='url(#hatched-bar)'
-      />
-      <defs>
-        <pattern
-          id='hatched-bar'
-          x='0'
-          y='0'
-          width='5'
-          height='5'
-          patternUnits='userSpaceOnUse'
-          patternTransform='rotate(-45)'
-        >
-          <rect width='10' height='10' opacity={0.5} fill={fill} />
-          <rect width='1' height='10' fill={fill} />
-        </pattern>
-      </defs>
-    </>
   );
 }
 
@@ -209,11 +167,12 @@ function Stat({
   );
 }
 
+// Filament's chart colors: ApexCharts blue for moisture, amber for temperature.
 const moistureConfig = {
-  moisture: { label: 'Soil Moisture', color: 'var(--chart-1)' }
+  moisture: { label: 'Soil Moisture', color: '#008FFB' }
 } satisfies ChartConfig;
 const temperatureConfig = {
-  temperature: { label: 'Temperature', color: 'var(--chart-2)' }
+  temperature: { label: 'Temperature', color: '#f59e0b' }
 } satisfies ChartConfig;
 
 export function PlantWidgets({ plantId, initial }: { plantId: number; initial: PlantOverview }) {
