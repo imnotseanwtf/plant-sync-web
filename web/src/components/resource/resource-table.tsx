@@ -47,10 +47,10 @@ type Props<T> = {
   noun: { singular: string; plural: string };
   columns: ResourceColumn<T>[];
   getId: (row: T) => string | number;
-  /** Optional link shown next to Edit (e.g. a plant's readings page). */
-  viewHref?: (row: T) => string;
-  /** Renders the side-panel editor; opened by the row's Edit link. */
-  renderEditor: (props: {
+  /** Edit opens a full page (e.g. the plant page with its charts)... */
+  editHref?: (row: T) => string;
+  /** ...or a side panel. Provide one of the two. */
+  renderEditor?: (props: {
     row: T | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -68,7 +68,7 @@ export function ResourceTable<T>({
   noun,
   columns,
   getId,
-  viewHref,
+  editHref,
   renderEditor,
   queryKey,
   fetchList,
@@ -282,15 +282,15 @@ export function ResourceTable<T>({
                     <TableCell key={column.id}>{column.cell(row)}</TableCell>
                   ))}
                   <TableCell className='pr-6 text-right'>
-                    <div className='flex items-center justify-end gap-4'>
-                      {viewHref && (
-                        <Link
-                          href={viewHref(row)}
-                          className='text-primary text-sm font-medium hover:underline'
-                        >
-                          View
-                        </Link>
-                      )}
+                    {editHref ? (
+                      <Link
+                        href={editHref(row)}
+                        className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
+                      >
+                        <Icons.edit className='size-4' />
+                        Edit
+                      </Link>
+                    ) : (
                       <button
                         type='button'
                         onClick={() => setEditing(row)}
@@ -299,7 +299,7 @@ export function ResourceTable<T>({
                         <Icons.edit className='size-4' />
                         Edit
                       </button>
-                    </div>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -380,7 +380,7 @@ export function ResourceTable<T>({
         title={`Delete ${selected.size === 1 ? `this ${noun.singular}` : `${selected.size} ${noun.plural}`}?`}
         description='This action cannot be undone.'
       />
-      {renderEditor({
+      {renderEditor?.({
         row: editing,
         open: editing !== null,
         onOpenChange: (open) => !open && setEditing(null)

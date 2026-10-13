@@ -5,7 +5,6 @@ import { deletePlantsAndRefresh } from '../api/mutations';
 import { plantKeys } from '../api/queries';
 import { getPlantIds, getPlants } from '../api/service';
 import type { Plant } from '../api/types';
-import { PlantFormSheet } from './plant-form-sheet';
 
 const n = (value: number) => value.toLocaleString('en-US');
 
@@ -46,15 +45,12 @@ export function PlantTable() {
       noun={{ singular: 'plant', plural: 'plants' }}
       columns={columns}
       getId={(p) => p.id}
-      viewHref={(p) => `/dashboard/plants/${p.id}`}
+      editHref={(p) => `/dashboard/plants/${p.id}/edit`}
       queryKey={plantKeys.list}
       fetchList={getPlants}
       searchable
       deleteMany={deletePlantsAndRefresh}
       getAllIds={getPlantIds}
-      renderEditor={({ row, open, onOpenChange }) => (
-        <PlantFormSheet plant={row ?? undefined} open={open} onOpenChange={onOpenChange} />
-      )}
     />
   );
 }
