@@ -1,55 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="221 -8 304 312" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
   <defs>
-    <linearGradient id="wifi" gradientUnits="userSpaceOnUse" x1="0" y1="8" x2="0" y2="110">
-      <stop offset="0" stop-color="#1E88F5"/>
-      <stop offset="1" stop-color="#14B8A6"/>
-    </linearGradient>
-    <linearGradient id="leafDark" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2FA84F"/>
-      <stop offset="1" stop-color="#14783A"/>
-    </linearGradient>
-    <linearGradient id="leafLight" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#C6E86E"/>
-      <stop offset="1" stop-color="#6FBF3F"/>
-    </linearGradient>
-    <linearGradient id="stem" gradientUnits="userSpaceOnUse" x1="373" y1="205" x2="373" y2="298">
-      <stop offset="0" stop-color="#3DB25A"/>
-      <stop offset="1" stop-color="#17803F"/>
-    </linearGradient>
-    <linearGradient id="ringOuter" gradientUnits="userSpaceOnUse" x1="0" y1="150" x2="0" y2="295">
-      <stop offset="0" stop-color="#14B8A6"/>
-      <stop offset="1" stop-color="#0B63A8"/>
-    </linearGradient>
-    <linearGradient id="ringInner" gradientUnits="userSpaceOnUse" x1="0" y1="160" x2="0" y2="295">
-      <stop offset="0" stop-color="#9BD83F"/>
-      <stop offset="1" stop-color="#1FA06B"/>
-    </linearGradient>
-    <linearGradient id="basin" gradientUnits="userSpaceOnUse" x1="290" y1="0" x2="456" y2="0">
-      <stop offset="0" stop-color="#14B8A6"/>
-      <stop offset=".5" stop-color="#1E88F5"/>
-      <stop offset="1" stop-color="#14B8A6"/>
-    </linearGradient>
-    <!-- one half of the symmetric emblem (left); mirrored for the right -->
-    <g id="half">
-      <path d="M262 112C300 104 350 128 368 208C318 202 268 168 262 112Z" fill="url(#leafDark)"/>
-      <path d="M267 116C300 112 336 128 356 170C322 146 292 130 267 116Z" fill="url(#leafLight)"/>
-      <path d="M272 122C306 138 340 168 366 206" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-opacity=".9"/>
-      <path d="M373 268C350 270 334 258 330 238C354 236 370 248 373 268Z" fill="url(#leafDark)"/>
-      <path d="M369 262C356 262 345 255 340 244C354 245 365 251 369 262Z" fill="url(#leafLight)"/>
-    </g>
+    <linearGradient id="gg" x1="20" y1="20" x2="100" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#4ADE80"/><stop offset="1" stop-color="#047857"/></linearGradient>
+    <linearGradient id="bb" x1="28" y1="18" x2="108" y2="108" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#38BDF8"/><stop offset="1" stop-color="#0369A1"/></linearGradient>
+    <mask id="gap" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+      <rect width="128" height="128" fill="#fff"/>
+      <path d="M64 16A24 24 0 0 1 64 64A24 24 0 0 0 64 112" stroke="#000" stroke-width="5" fill="none"/>
+    </mask>
   </defs>
-
-  <!-- wifi / signal -->
-  <g stroke="url(#wifi)" stroke-linecap="round">
-    <path d="M275 60A118 118 0 0 1 469 60" stroke-width="21"/>
-    <path d="M303 81A84 84 0 0 1 443 81" stroke-width="19"/>
-    <path d="M331 100A50 50 0 0 1 415 100" stroke-width="17"/>
+  <g transform="rotate(-32 64 64)">
+    <g mask="url(#gap)">
+      <path d="M64 16A48 48 0 0 0 64 112A24 24 0 0 1 64 64A24 24 0 0 0 64 16Z" fill="url(#gg)"/>
+      <path d="M64 16A48 48 0 0 1 64 112A24 24 0 0 1 64 64A24 24 0 0 0 64 16Z" fill="url(#bb)"/>
+    </g>
   </g>
-
-  <!-- both halves -->
-  <use href="#half"/>
-  <use href="#half" transform="translate(746 0) scale(-1 1)"/>
-
-  <!-- the plant in the middle -->
-  <path d="M373 205V296" stroke="url(#stem)" stroke-width="11" stroke-linecap="round"/>
 </svg>

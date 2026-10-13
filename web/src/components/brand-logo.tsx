@@ -1,38 +1,34 @@
 import { cn } from '@/lib/utils';
 
-/** Simplified emblem (signal arcs + plant) for tight spaces like the collapsed sidebar. */
+/**
+ * The Plant Sync mark: a green plant-half and a blue water-half interlocked like a yin-yang, each
+ * carrying the other's symbol (a water drop in the green, a sprout in the blue).
+ */
 export function BrandMark({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src='/icon.svg'
+      src='/logo-mark.svg'
       alt='Plant Sync'
-      width={304}
-      height={304}
+      width={128}
+      height={128}
       className={cn('aspect-square shrink-0', className)}
     />
   );
 }
 
-/**
- * The Plant Sync logo, laid out like the original: "Plant" and "Sync" on either side of the
- * emblem (signal arcs over a growing plant, ringed by crescents).
- */
+/** Mark + wordmark. "Plant" and "Sync" take the colors of the mark's two halves. */
 export function BrandLogo({ size = 'md', className }: { size?: 'md' | 'lg'; className?: string }) {
   const lg = size === 'lg';
-  const word = cn('font-extrabold tracking-tight', lg ? 'text-5xl' : 'text-xl leading-none');
   return (
-    <span className={cn('flex items-end', lg ? 'gap-1' : 'gap-0.5', className)}>
-      <span className={cn(word, 'text-[#147200] dark:text-[#4ade80]')}>Plant</span>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src='/logo-emblem.svg'
-        alt=''
-        width={320}
-        height={348}
-        className={cn('shrink-0', lg ? 'h-28 w-auto' : 'h-14 w-auto')}
-      />
-      <span className={cn(word, 'text-[#0052c0] dark:text-[#60a5fa]')}>Sync</span>
+    <span className={cn('flex items-center', lg ? 'gap-4' : 'gap-2.5', className)}>
+      <BrandMark className={lg ? 'size-20' : 'size-10'} />
+      <span
+        className={cn('font-extrabold tracking-tight', lg ? 'text-5xl' : 'text-xl leading-none')}
+      >
+        <span className='text-[#059669] dark:text-[#34d399]'>Plant</span>{' '}
+        <span className='text-[#0284c7] dark:text-[#38bdf8]'>Sync</span>
+      </span>
     </span>
   );
 }
