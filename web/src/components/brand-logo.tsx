@@ -1,32 +1,38 @@
 import { cn } from '@/lib/utils';
 
-/** The Plant Sync app icon: a sprout (Plant) inside circular arrows (Sync). */
+/** Simplified emblem (signal arcs + plant) for tight spaces like the collapsed sidebar. */
 export function BrandMark({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src='/logo-mark.svg'
+      src='/icon.svg'
       alt='Plant Sync'
-      width={128}
-      height={128}
+      width={304}
+      height={304}
       className={cn('aspect-square shrink-0', className)}
     />
   );
 }
 
-/** Icon + wordmark lockup: "Plant" in the text color, "Sync" in the brand green. */
+/**
+ * The Plant Sync logo, laid out like the original: "Plant" and "Sync" on either side of the
+ * emblem (signal arcs over a growing plant, ringed by crescents).
+ */
 export function BrandLogo({ size = 'md', className }: { size?: 'md' | 'lg'; className?: string }) {
+  const lg = size === 'lg';
+  const word = cn('font-extrabold tracking-tight', lg ? 'text-5xl' : 'text-xl leading-none');
   return (
-    <span className={cn('flex items-center', size === 'lg' ? 'gap-3' : 'gap-2.5', className)}>
-      <BrandMark className={size === 'lg' ? 'size-14' : 'size-9'} />
-      <span
-        className={cn(
-          'font-semibold tracking-tight',
-          size === 'lg' ? 'text-3xl' : 'text-lg leading-none'
-        )}
-      >
-        Plant <span className='text-primary'>Sync</span>
-      </span>
+    <span className={cn('flex items-end', lg ? 'gap-1' : 'gap-0.5', className)}>
+      <span className={cn(word, 'text-[#147200] dark:text-[#4ade80]')}>Plant</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src='/logo-emblem.svg'
+        alt=''
+        width={320}
+        height={348}
+        className={cn('shrink-0', lg ? 'h-28 w-auto' : 'h-14 w-auto')}
+      />
+      <span className={cn(word, 'text-[#0052c0] dark:text-[#60a5fa]')}>Sync</span>
     </span>
   );
 }
