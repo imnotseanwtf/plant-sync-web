@@ -1,87 +1,60 @@
 'use client';
 
-import type { Column, ColumnDef } from '@tanstack/react-table';
-import { Icons } from '@/components/icons';
-import { ResourceDataTable } from '@/components/resource/resource-data-table';
-import { RowActions } from '@/components/resource/row-actions';
-import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
+import { ResourceTable, type ResourceColumn } from '@/components/resource/resource-table';
 import { deletePlantsAndRefresh } from '../api/mutations';
 import { plantKeys } from '../api/queries';
-import { getPlants } from '../api/service';
+import { getPlantIds, getPlants } from '../api/service';
 import type { Plant } from '../api/types';
+import { PlantFormSheet } from './plant-form-sheet';
 
 const n = (value: number) => value.toLocaleString('en-US');
-const header = (title: string) =>
-  function Header({ column }: { column: Column<Plant, unknown> }) {
-    return <DataTableColumnHeader column={column} title={title} />;
-  };
 
-// Same columns as the Filament table, all sortable; the name box searches plant and device names.
-const columns: ColumnDef<Plant>[] = [
-  { id: 'deviceName', accessorKey: 'deviceName', header: header('Device identifier') },
-  {
-    id: 'name',
-    accessorKey: 'name',
-    header: header('Name'),
-    meta: {
-      label: 'Name',
-      placeholder: 'Search plants or devices...',
-      variant: 'text' as const,
-      icon: Icons.text
-    },
-    enableColumnFilter: true
-  },
+// Same columns as the Filament table; every one sortable, device and name searchable.
+const columns: ResourceColumn<Plant>[] = [
+  { id: 'deviceName', label: 'Device identifier', sortable: true, cell: (p) => p.deviceName },
+  { id: 'name', label: 'Name', sortable: true, cell: (p) => p.name },
   {
     id: 'moistureLevelMin',
-    accessorKey: 'moistureLevelMin',
-    header: header('Moisture level min'),
-    cell: ({ row }) => `${n(row.original.moistureLevelMin)}%`
+    label: 'Moisture level min',
+    sortable: true,
+    cell: (p) => `${n(p.moistureLevelMin)}%`
   },
   {
     id: 'moistureLevelMax',
-    accessorKey: 'moistureLevelMax',
-    header: header('Moisture level max'),
-    cell: ({ row }) => `${n(row.original.moistureLevelMax)}%`
+    label: 'Moisture level max',
+    sortable: true,
+    cell: (p) => `${n(p.moistureLevelMax)}%`
   },
-  {
-    id: 'humidity',
-    accessorKey: 'humidity',
-    header: header('Humidity'),
-    cell: ({ row }) => `${n(row.original.humidity)}%`
-  },
+  { id: 'humidity', label: 'Humidity', sortable: true, cell: (p) => `${n(p.humidity)}%` },
   {
     id: 'temperature',
-    accessorKey: 'temperature',
-    header: header('Temperature'),
-    cell: ({ row }) => `${n(row.original.temperature)}°C`
+    label: 'Temperature',
+    sortable: true,
+    cell: (p) => `${n(p.temperature)}°C`
   },
   {
     id: 'lightIntensity',
-    accessorKey: 'lightIntensity',
-    header: header('Light intensity'),
-    cell: ({ row }) => `${n(row.original.lightIntensity)} lux`
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => (
-      <RowActions
-        editHref={`/dashboard/plants/${row.original.id}/edit`}
-        title={`Delete ${row.original.name}?`}
-        onDelete={() => deletePlantsAndRefresh([row.original.id])}
-      />
-    )
+    label: 'Light intensity',
+    sortable: true,
+    cell: (p) => `${n(p.lightIntensity)} lux`
   }
 ];
 
 export function PlantTable() {
   return (
-    <ResourceDataTable
+    <ResourceTable
       noun={{ singular: 'plant', plural: 'plants' }}
       columns={columns}
-      getRowId={(p) => p.id}
+      getId={(p) => p.id}
+      viewHref={(p) => `/dashboard/plants/${p.id}`}
       queryKey={plantKeys.list}
       fetchList={getPlants}
+      searchable
       deleteMany={deletePlantsAndRefresh}
+      getAllIds={getPlantIds}
+      renderEditor={({ row, open, onOpenChange }) => (
+        <PlantFormSheet plant={row ?? undefined} open={open} onOpenChange={onOpenChange} />
+      )}
     />
   );
 }

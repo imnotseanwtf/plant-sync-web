@@ -1,22 +1,21 @@
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { toListFilters, parseSortParam } from '@/lib/list-filters';
 import { getQueryClient } from '@/lib/query-client';
 import { searchParamsCache } from '@/lib/searchparams';
 import { devicesQueryOptions } from '../api/queries';
 import { DeviceTable } from './device-table';
 
 export default async function DeviceListing() {
+  const sort = searchParamsCache.get('sort');
   const queryClient = getQueryClient();
-  // Awaited so the server render already has the rows (no hydration mismatch).
   await queryClient.prefetchQuery(
-    devicesQueryOptions(
-      toListFilters({
-        page: searchParamsCache.get('page'),
-        perPage: searchParamsCache.get('perPage'),
-        name: searchParamsCache.get('name'),
-        sorting: parseSortParam(searchParamsCache.get('sort'))
+    devicesQueryOptions({
+      page: searchParamsCache.get('page'),
+      limit: searchParamsCache.get('perPage'),
+      ...(sort && {
+        sort,
+        dir: searchParamsCache.get('dir') === 'desc' ? ('desc' as const) : ('asc' as const)
       })
-    )
+    })
   );
 
   return (
