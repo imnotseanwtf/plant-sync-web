@@ -1,0 +1,28 @@
+'use client';
+
+import { ResourceTable, type ResourceColumn } from '@/components/resource/resource-table';
+import { deleteDevicesAndRefresh } from '../api/mutations';
+import { deviceKeys } from '../api/queries';
+import { getDeviceIds, getDevices } from '../api/service';
+import type { Device } from '../api/types';
+
+// Filament listed just `id` and `name`, neither searchable nor sortable.
+const columns: ResourceColumn<Device>[] = [
+  { id: 'id', label: 'Id', cell: (d) => d.id },
+  { id: 'name', label: 'Name', cell: (d) => d.name }
+];
+
+export function DeviceTable() {
+  return (
+    <ResourceTable
+      noun={{ singular: 'device identifier', plural: 'device identifiers' }}
+      columns={columns}
+      getId={(d) => d.id}
+      editHref={(d) => `/dashboard/device-identifiers/${d.id}/edit`}
+      queryKey={deviceKeys.list}
+      fetchList={getDevices}
+      deleteMany={deleteDevicesAndRefresh}
+      getAllIds={() => getDeviceIds()}
+    />
+  );
+}

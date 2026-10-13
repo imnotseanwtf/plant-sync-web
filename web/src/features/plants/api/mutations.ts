@@ -2,7 +2,7 @@ import { mutationOptions } from '@tanstack/react-query';
 import { unwrap } from '@/lib/action-result';
 import { getQueryClient } from '@/lib/query-client';
 import { deviceKeys } from '@/features/devices/api/queries';
-import { createPlant, deletePlant, updatePlant } from './service';
+import { createPlant, deletePlants, updatePlant } from './service';
 import { plantKeys } from './queries';
 import type { PlantMutationPayload } from './types';
 
@@ -12,7 +12,7 @@ const invalidate = () => {
   const client = getQueryClient();
   return Promise.all([
     client.invalidateQueries({ queryKey: plantKeys.all }),
-    // The device pickers and the "Plant" column on the devices table depend on plant assignment.
+    // The device picker only offers devices without a plant.
     client.invalidateQueries({ queryKey: deviceKeys.all })
   ]);
 };
@@ -33,10 +33,8 @@ export const updatePlantMutation = mutationOptions({
   }
 });
 
-export const deletePlantMutation = mutationOptions({
-  mutationFn: async (id: number) => {
-    const result = unwrap(await deletePlant(id));
-    await invalidate();
-    return result;
-  }
-});
+export async function deletePlantsAndRefresh(ids: (string | number)[]) {
+  const result = unwrap(await deletePlants(ids.map(Number)));
+  await invalidate();
+  return result;
+}

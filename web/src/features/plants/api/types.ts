@@ -12,15 +12,6 @@ export type Plant = {
   lightIntensity: number;
 };
 
-export type PlantFilters = {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sort?: string;
-};
-
-export type PlantsResponse = { plants: Plant[]; total: number };
-
 export type PlantMutationPayload = PlantFormValues;
 
 export type SensorReading = {

@@ -11,17 +11,14 @@ export function dbError(error: unknown, messages: { unique?: string; notFound?: 
   throw error;
 }
 
-/** Parse the `sort` search param (JSON `[{ id, desc }]`) into allow-listed Prisma orderBy fields. */
-export function parseSort(sort: string | undefined, fields: Record<string, string>) {
-  if (!sort) return [];
-  try {
-    const parsed = JSON.parse(sort) as { id: string; desc: boolean }[];
-    return parsed
-      .filter((s) => typeof s.id === 'string' && s.id in fields)
-      .map((s) => ({ [fields[s.id]]: s.desc ? 'desc' : 'asc' }) as Record<string, 'asc' | 'desc'>);
-  } catch {
-    return [];
-  }
+/** Map the `sort`/`dir` search params onto an allow-listed Prisma orderBy (empty if unknown). */
+export function sortBy<T>(
+  sort: string | undefined,
+  dir: 'asc' | 'desc' | undefined,
+  fields: Record<string, (dir: 'asc' | 'desc') => T>
+): T[] {
+  if (!sort || !(sort in fields)) return [];
+  return [fields[sort](dir === 'desc' ? 'desc' : 'asc')];
 }
 
 /** Clamp client-supplied paging values. */

@@ -6,8 +6,11 @@ export function verifyPassword(plain: string, hash: string) {
   return compare(plain, hash.replace(/^\$2y\$/, '$2b$'));
 }
 
-export function hashPassword(plain: string) {
-  return hash(plain, 12);
+// Store hashes with Laravel's `$2y$` prefix. The algorithm is identical to `$2b$`, but PHP's
+// password_verify (and so Laravel's Hash::check) rejects `$2b$`, which would lock users out of
+// the Laravel app if you ever roll back.
+export async function hashPassword(plain: string) {
+  return (await hash(plain, 12)).replace(/^\$2[ab]\$/, '$2y$');
 }
 
 // A real hash to compare against when the email is unknown, so response time

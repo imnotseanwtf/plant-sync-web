@@ -3,7 +3,10 @@ import { jwtVerify, SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 
 export const SESSION_COOKIE = 'plant_sync_session';
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+// "Remember me" keeps the cookie for 30 days; otherwise it's a browser-session cookie whose
+// token expires after 12 hours.
+const REMEMBER_MAX_AGE = 60 * 60 * 24 * 30;
+const SESSION_MAX_AGE = 60 * 60 * 12;
 
 function secretKey() {
   const secret = process.env.AUTH_SECRET;
@@ -23,12 +26,12 @@ export async function verifySessionToken(token?: string): Promise<{ userId: stri
   }
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, remember = false) {
   const token = await new SignJWT({})
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(userId)
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_MAX_AGE}s`)
+    .setExpirationTime(`${remember ? REMEMBER_MAX_AGE : SESSION_MAX_AGE}s`)
     .sign(secretKey());
 
   (await cookies()).set(SESSION_COOKIE, token, {
@@ -38,7 +41,7 @@ export async function createSession(userId: string) {
     // secure when the app is configured with an https URL.
     secure: (process.env.NEXT_PUBLIC_APP_URL ?? '').startsWith('https://'),
     path: '/',
-    maxAge: SESSION_MAX_AGE
+    ...(remember && { maxAge: REMEMBER_MAX_AGE })
   });
 }
 

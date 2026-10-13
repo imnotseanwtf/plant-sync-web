@@ -2,25 +2,25 @@ import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { searchParamsCache } from '@/lib/searchparams';
 import { devicesQueryOptions } from '../api/queries';
-import { DevicesTable } from './devices-table';
+import { DeviceTable } from './device-table';
 
-export default function DeviceListingPage() {
-  const search = searchParamsCache.get('name');
+export default async function DeviceListing() {
   const sort = searchParamsCache.get('sort');
-
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
+  await queryClient.prefetchQuery(
     devicesQueryOptions({
       page: searchParamsCache.get('page'),
       limit: searchParamsCache.get('perPage'),
-      ...(search && { search }),
-      ...(sort && { sort })
+      ...(sort && {
+        sort,
+        dir: searchParamsCache.get('dir') === 'desc' ? ('desc' as const) : ('asc' as const)
+      })
     })
   );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <DevicesTable />
+      <DeviceTable />
     </HydrationBoundary>
   );
 }

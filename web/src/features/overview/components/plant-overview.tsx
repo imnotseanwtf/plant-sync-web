@@ -68,7 +68,7 @@ export function PlantOverview({ summary }: { summary: DashboardSummary }) {
             return (
               <Link
                 key={plant.id}
-                href={`/dashboard/plants/${plant.id}`}
+                href={`/dashboard/plants/${plant.id}/edit`}
                 aria-label={`${plant.name} readings`}
                 className='group'
               >

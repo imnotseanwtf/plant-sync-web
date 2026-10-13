@@ -1,14 +1,14 @@
 import { queryOptions } from '@tanstack/react-query';
+import type { ListFilters } from '@/types/resource';
 import { getPlantOverview, getPlants } from './service';
-import type { PlantFilters } from './types';
 
 export const plantKeys = {
   all: ['plants'] as const,
-  list: (filters: PlantFilters) => [...plantKeys.all, 'list', filters] as const,
+  list: (filters: ListFilters) => [...plantKeys.all, 'list', filters] as const,
   overview: (id: number) => [...plantKeys.all, 'overview', id] as const
 };
 
-export const plantsQueryOptions = (filters: PlantFilters) =>
+export const plantsQueryOptions = (filters: ListFilters) =>
   queryOptions({
     queryKey: plantKeys.list(filters),
     queryFn: () => getPlants(filters)

@@ -1,65 +1,58 @@
 'use server';
 
-import type { Prisma } from '../../../../generated/prisma/client';
 import { requireUser } from '@/lib/auth/current-user';
-import { fail, ok, type ActionResult } from '@/lib/action-result';
-import { dbError, paging, parseSort } from '@/lib/db-helpers';
 import { hashPassword } from '@/lib/auth/password';
+import { fail, ok, type ActionResult } from '@/lib/action-result';
+import { dbError, paging } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
+import type { ListFilters, ListResponse } from '@/types/resource';
 import { createUserSchema, updateUserSchema } from '../schemas/user';
-import type { AppUser, UserFilters, UserMutationPayload, UsersResponse } from './types';
+import type { AppUser, UserMutationPayload } from './types';
 
 // Every export here is a public HTTP endpoint (server action), so each one authenticates.
 // `password` is never selected, so hashes cannot leak to the client.
 
-const userSelect = {
-  id: true,
-  name: true,
-  email: true,
-  createdAt: true
-} satisfies Prisma.UserSelect;
-
-const toUser = (u: Prisma.UserGetPayload<{ select: typeof userSelect }>): AppUser => ({
-  id: Number(u.id),
-  name: u.name,
-  email: u.email,
-  createdAt: u.createdAt.toISOString()
+const select = { id: true, name: true, email: true } as const;
+const toUser = (u: { id: bigint; name: string; email: string }): AppUser => ({
+  ...u,
+  id: Number(u.id)
 });
+const EMAIL_TAKEN = 'The email has already been taken.';
 
-const EMAIL_TAKEN = 'A user with that email already exists.';
-
-export async function getUsers(filters: UserFilters): Promise<UsersResponse> {
+export async function getUsers(filters: ListFilters): Promise<ListResponse<AppUser>> {
   await requireUser();
-  const where: Prisma.UserWhereInput = filters.search
-    ? {
-        OR: [
-          { name: { contains: filters.search, mode: 'insensitive' } },
-          { email: { contains: filters.search, mode: 'insensitive' } }
-        ]
-      }
-    : {};
-  const orderBy = parseSort(filters.sort, { name: 'name' });
-
-  const [users, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     prisma.user.findMany({
-      where,
-      select: userSelect,
-      orderBy: orderBy.length ? orderBy : { createdAt: 'desc' },
+      select,
+      orderBy: { createdAt: 'desc' },
       ...paging(filters.page, filters.limit)
     }),
-    prisma.user.count({ where })
+    prisma.user.count()
   ]);
-  return { users: users.map(toUser), total };
+  return { rows: rows.map(toUser), total };
+}
+
+export async function getUser(id: number): Promise<AppUser | null> {
+  await requireUser();
+  const user = await prisma.user.findUnique({ where: { id: BigInt(id) }, select });
+  return user ? toUser(user) : null;
+}
+
+export async function getUserIds(): Promise<number[]> {
+  await requireUser();
+  const rows = await prisma.user.findMany({ select: { id: true } });
+  return rows.map((r) => Number(r.id));
 }
 
 export async function createUser(data: UserMutationPayload): Promise<ActionResult<AppUser>> {
   await requireUser();
   const parsed = createUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
+  const { passwordConfirmation: _confirm, password, ...rest } = parsed.data;
   try {
     const user = await prisma.user.create({
-      data: { ...parsed.data, password: await hashPassword(parsed.data.password) },
-      select: userSelect
+      data: { ...rest, password: await hashPassword(password) },
+      select
     });
     return ok(toUser(user));
   } catch (e) {
@@ -74,12 +67,12 @@ export async function updateUser(
   await requireUser();
   const parsed = updateUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
-  const { password, ...rest } = parsed.data;
+  const { passwordConfirmation: _confirm, password, ...rest } = parsed.data;
   try {
     const user = await prisma.user.update({
       where: { id: BigInt(id) },
       data: { ...rest, ...(password && { password: await hashPassword(password) }) },
-      select: userSelect
+      select
     });
     return ok(toUser(user));
   } catch (e) {
@@ -87,13 +80,9 @@ export async function updateUser(
   }
 }
 
-export async function deleteUser(id: number): Promise<ActionResult<null>> {
+export async function deleteUsers(ids: number[]): Promise<ActionResult<number>> {
   const me = await requireUser();
-  if (me.id === id) return fail("You can't delete your own account.");
-  try {
-    await prisma.user.delete({ where: { id: BigInt(id) } });
-    return ok(null);
-  } catch (e) {
-    return dbError(e, { notFound: 'User not found.' });
-  }
+  if (ids.includes(me.id)) return fail("You can't delete your own account.");
+  const { count } = await prisma.user.deleteMany({ where: { id: { in: ids.map(BigInt) } } });
+  return ok(count);
 }

@@ -1,21 +1,21 @@
 import { queryOptions } from '@tanstack/react-query';
+import type { ListFilters } from '@/types/resource';
 import { getDeviceOptions, getDevices } from './service';
-import type { DeviceFilters } from './types';
 
 export const deviceKeys = {
   all: ['devices'] as const,
-  list: (filters: DeviceFilters) => [...deviceKeys.all, 'list', filters] as const,
-  options: (plantId?: number) => [...deviceKeys.all, 'options', plantId ?? null] as const
+  list: (filters: ListFilters) => [...deviceKeys.all, 'list', filters] as const,
+  options: () => [...deviceKeys.all, 'options'] as const
 };
 
-export const devicesQueryOptions = (filters: DeviceFilters) =>
+export const devicesQueryOptions = (filters: ListFilters) =>
   queryOptions({
     queryKey: deviceKeys.list(filters),
     queryFn: () => getDevices(filters)
   });
 
-export const deviceOptionsQueryOptions = (plantId?: number) =>
+export const deviceOptionsQueryOptions = () =>
   queryOptions({
-    queryKey: deviceKeys.options(plantId),
-    queryFn: () => getDeviceOptions(plantId)
+    queryKey: deviceKeys.options(),
+    queryFn: () => getDeviceOptions()
   });

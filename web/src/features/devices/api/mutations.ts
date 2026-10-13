@@ -2,7 +2,7 @@ import { mutationOptions } from '@tanstack/react-query';
 import { unwrap } from '@/lib/action-result';
 import { getQueryClient } from '@/lib/query-client';
 import { plantKeys } from '@/features/plants/api/queries';
-import { createDevice, deleteDevice, updateDevice } from './service';
+import { createDevice, deleteDevices, updateDevice } from './service';
 import { deviceKeys } from './queries';
 import type { DeviceMutationPayload } from './types';
 
@@ -12,7 +12,7 @@ const invalidate = () => {
   const client = getQueryClient();
   return Promise.all([
     client.invalidateQueries({ queryKey: deviceKeys.all }),
-    // Renaming or deleting a device changes plant rows too.
+    // Deleting a device deletes its plant too.
     client.invalidateQueries({ queryKey: plantKeys.all })
   ]);
 };
@@ -33,10 +33,8 @@ export const updateDeviceMutation = mutationOptions({
   }
 });
 
-export const deleteDeviceMutation = mutationOptions({
-  mutationFn: async (id: string) => {
-    const result = unwrap(await deleteDevice(id));
-    await invalidate();
-    return result;
-  }
-});
+export async function deleteDevicesAndRefresh(ids: (string | number)[]) {
+  const result = unwrap(await deleteDevices(ids.map(String)));
+  await invalidate();
+  return result;
+}

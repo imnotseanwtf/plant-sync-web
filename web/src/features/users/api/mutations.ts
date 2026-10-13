@@ -1,7 +1,7 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { unwrap } from '@/lib/action-result';
 import { getQueryClient } from '@/lib/query-client';
-import { createUser, deleteUser, updateUser } from './service';
+import { createUser, deleteUsers, updateUser } from './service';
 import { userKeys } from './queries';
 import type { UserMutationPayload } from './types';
 
@@ -25,10 +25,8 @@ export const updateUserMutation = mutationOptions({
   }
 });
 
-export const deleteUserMutation = mutationOptions({
-  mutationFn: async (id: number) => {
-    const result = unwrap(await deleteUser(id));
-    await invalidate();
-    return result;
-  }
-});
+export async function deleteUsersAndRefresh(ids: (string | number)[]) {
+  const result = unwrap(await deleteUsers(ids.map(Number)));
+  await invalidate();
+  return result;
+}

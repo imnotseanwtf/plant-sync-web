@@ -25,7 +25,7 @@ export async function signIn(_prev: SignInState, formData: FormData): Promise<Si
   const valid = await verifyPassword(parsed.data.password, user?.password ?? DUMMY_HASH);
   if (!user || !valid) return { error: 'Invalid email or password.', email };
 
-  await createSession(user.id.toString());
+  await createSession(user.id.toString(), formData.get('remember') === 'on');
   redirect('/dashboard/overview');
 }
 

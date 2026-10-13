@@ -1,24 +1,20 @@
 import * as z from 'zod';
 
-const percent = (label: string) =>
-  z
-    .number({ error: `${label} is required` })
-    .min(0, 'Min 0')
-    .max(100, 'Max 100');
+const required = (label: string) => ({ error: `The ${label} field is required.` });
 
 export const plantSchema = z
   .object({
-    name: z.string().trim().min(2, 'Name must be at least 2 characters').max(255),
-    deviceIdentifierId: z.uuid('Select a device'),
-    moistureLevelMin: percent('Minimum moisture'),
-    moistureLevelMax: percent('Maximum moisture'),
-    humidity: percent('Target humidity'),
-    temperature: z.number({ error: 'Target temperature is required' }).min(-50).max(100),
-    lightIntensity: z.number({ error: 'Target light is required' }).min(0, 'Min 0')
+    name: z.string().trim().min(1, 'The name field is required.').max(255),
+    deviceIdentifierId: z.uuid('The device identifier field is required.'),
+    moistureLevelMin: z.number(required('moisture level min')),
+    moistureLevelMax: z.number(required('moisture level max')),
+    humidity: z.number(required('humidity')),
+    temperature: z.number(required('temperature')),
+    lightIntensity: z.number(required('light intensity'))
   })
   .refine((v) => v.moistureLevelMin <= v.moistureLevelMax, {
     path: ['moistureLevelMax'],
-    message: 'Must be at least the minimum'
+    message: 'Moisture level max must be at least the minimum.'
   });
 
 export type PlantFormValues = z.infer<typeof plantSchema>;
