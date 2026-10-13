@@ -1,8 +1,18 @@
 'use client';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
@@ -21,8 +31,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '@/components/icons';
+import { signOut } from '@/features/auth/actions';
 
-export default function AppSidebar() {
+export default function AppSidebar({ user }: { user: { name: string; email: string } }) {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
   const filteredGroups = useFilteredNavGroups(navGroups);
@@ -33,11 +44,11 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible='icon'>
-      <SidebarHeader className='px-4 pt-4 group-data-[collapsible=icon]:hidden'>
-        <Link href='/dashboard/overview' aria-label='Plant Sync'>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src='/logo.png' alt='Plant Sync' className='h-14 w-auto' />
-        </Link>
+      <SidebarHeader>
+        <div className='flex items-center gap-2 px-2 py-1 font-semibold'>
+          <Icons.plant className='text-primary size-5' />
+          <span className='truncate group-data-[collapsible=icon]:hidden'>Plant Sync</span>
+        </div>
       </SidebarHeader>
       <SidebarContent className='overflow-x-hidden'>
         {filteredGroups.map((group) => (
@@ -97,6 +108,48 @@ export default function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton
+                    size='lg'
+                    className='data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground'
+                  />
+                }
+              >
+                <Icons.user className='size-4' />
+                <span className='truncate'>{user.name}</span>
+                <Icons.chevronsDown className='ml-auto size-4' />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className='w-(--anchor-width) min-w-56 rounded-lg'
+                side='bottom'
+                align='end'
+                sideOffset={4}
+              >
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className='p-0 font-normal'>
+                    <div className='px-1 py-1.5 text-sm'>
+                      <div className='truncate font-medium'>{user.name}</div>
+                      <div className='text-muted-foreground truncate text-xs'>{user.email}</div>
+                    </div>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <Icons.logout className='mr-2 h-4 w-4' />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

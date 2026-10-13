@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import PageContainer from '@/components/layout/page-container';
-import { PageHeader } from '@/components/resource/page-header';
 import { getUser } from '@/features/users/api/service';
 import { UserDeleteButton } from '@/features/users/components/user-delete-button';
 import { UserForm } from '@/features/users/components/user-form';
@@ -16,15 +15,12 @@ export default async function EditUserPage({ params }: { params: Promise<{ userI
   if (!user) notFound();
 
   return (
-    <PageContainer>
-      <div className='flex flex-col gap-6'>
-        <PageHeader
-          breadcrumbs={[{ label: 'Users', href: '/dashboard/users' }, { label: 'Edit' }]}
-          title='Edit User'
-          actions={<UserDeleteButton id={user.id} />}
-        />
-        <UserForm user={user} />
-      </div>
+    <PageContainer
+      pageTitle='Edit User'
+      pageDescription='Update the user details.'
+      pageHeaderAction={<UserDeleteButton id={user.id} />}
+    >
+      <UserForm user={user} />
     </PageContainer>
   );
 }

@@ -4,16 +4,16 @@ import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AlertModal } from '@/components/modal/alert-modal';
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from './confirm-dialog';
 
-/** Red "Delete" header action on edit pages, with Filament's confirmation modal. */
+/** "Delete" header action on edit pages, with the starter's confirmation modal. */
 export function DeleteRecordButton({
   title,
   onDelete,
   redirectTo
 }: {
-  /** e.g. `Delete Plant` */
+  /** e.g. `Delete this plant?` */
   title: string;
   onDelete: () => Promise<unknown>;
   redirectTo: string;
@@ -37,12 +37,13 @@ export function DeleteRecordButton({
       <Button variant='destructive' onClick={() => setOpen(true)}>
         Delete
       </Button>
-      <ConfirmDialog
-        open={open}
-        onOpenChange={setOpen}
-        title={title}
-        loading={mutation.isPending}
+      <AlertModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
         onConfirm={() => mutation.mutate()}
+        loading={mutation.isPending}
+        title={title}
+        description='This action cannot be undone.'
       />
     </>
   );

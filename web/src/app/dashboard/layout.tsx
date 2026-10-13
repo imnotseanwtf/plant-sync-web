@@ -18,11 +18,10 @@ export const metadata: Metadata = {
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   // proxy.ts already redirects signed-out visitors; this also rejects deleted users.
-  await requireUser();
+  const user = await requireUser();
   // Persisting the sidebar state in the cookie.
   const cookieStore = await cookies();
-  // Expanded by default (like the Filament panel) until the user collapses it.
-  const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false';
+  const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
   return (
     <KBar>
       <SidebarProvider defaultOpen={defaultOpen}>
@@ -32,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         >
           Skip to content
         </a>
-        <AppSidebar />
+        <AppSidebar user={user} />
         <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
           <Header />
           <InfobarProvider defaultOpen={false}>{children}</InfobarProvider>

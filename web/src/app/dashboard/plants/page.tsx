@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { SearchParams } from 'nuqs/server';
+import { Icons } from '@/components/icons';
 import PageContainer from '@/components/layout/page-container';
-import { PageHeader } from '@/components/resource/page-header';
 import { buttonVariants } from '@/components/ui/button';
 import PlantListing from '@/features/plants/components/plant-listing';
 import { searchParamsCache } from '@/lib/searchparams';
@@ -12,19 +12,16 @@ export default async function PlantsPage(props: { searchParams: Promise<SearchPa
   searchParamsCache.parse(await props.searchParams);
 
   return (
-    <PageContainer>
-      <div className='flex flex-col gap-6'>
-        <PageHeader
-          breadcrumbs={[{ label: 'Plants', href: '/dashboard/plants' }, { label: 'List' }]}
-          title='Plants'
-          actions={
-            <Link href='/dashboard/plants/create' className={buttonVariants()}>
-              New plant
-            </Link>
-          }
-        />
-        <PlantListing />
-      </div>
+    <PageContainer
+      pageTitle='Plants'
+      pageDescription='Irrigation targets for each plant.'
+      pageHeaderAction={
+        <Link href='/dashboard/plants/create' className={buttonVariants()}>
+          <Icons.add className='mr-2 h-4 w-4' /> New plant
+        </Link>
+      }
+    >
+      <PlantListing />
     </PageContainer>
   );
 }

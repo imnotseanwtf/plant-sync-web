@@ -65,7 +65,7 @@ const moistureConfig = {
   moisture: { label: 'Soil Moisture', color: 'var(--chart-1)' }
 } satisfies ChartConfig;
 const temperatureConfig = {
-  temperature: { label: 'Temperature', color: '#f59e0b' }
+  temperature: { label: 'Temperature', color: 'var(--chart-2)' }
 } satisfies ChartConfig;
 
 export function PlantWidgets({ plantId, initial }: { plantId: number; initial: PlantOverview }) {

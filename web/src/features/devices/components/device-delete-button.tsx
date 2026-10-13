@@ -6,7 +6,7 @@ import { deleteDevicesAndRefresh } from '../api/mutations';
 export function DeviceDeleteButton({ id }: { id: string }) {
   return (
     <DeleteRecordButton
-      title='Delete Device Identifier'
+      title='Delete this device identifier?'
       onDelete={() => deleteDevicesAndRefresh([id])}
       redirectTo='/dashboard/device-identifiers'
     />

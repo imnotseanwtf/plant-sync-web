@@ -1,12 +1,13 @@
 'use client';
 
-import { useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 import { toast } from 'sonner';
-import { Fieldset } from '@/components/resource/fieldset';
 import { FormFooter } from '@/components/resource/form-footer';
-import { FormInput, ReadOnlyInput } from '@/components/resource/form-controls';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { useAppForm } from '@/lib/form';
 import { createDeviceMutation, updateDeviceMutation } from '../api/mutations';
 import type { Device } from '../api/types';
@@ -43,19 +44,32 @@ export function DeviceForm({ device }: { device?: Device }) {
 
   return (
     <form
-      className='flex flex-col gap-6'
+      className='flex flex-col gap-4'
       onSubmit={(e) => {
         e.preventDefault();
         another.current = false;
         form.handleSubmit();
       }}
     >
-      <Fieldset legend='Device Identifier Details'>
-        {device && <ReadOnlyInput label='Id' value={device.id} className='md:col-span-2' />}
-        <form.Field name='name'>
-          {(field) => <FormInput field={field} label='Name' required className='md:col-span-2' />}
-        </form.Field>
-      </Fieldset>
+      <Card>
+        <CardHeader>
+          <CardTitle>Device Identifier Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            {device && (
+              <Field>
+                <FieldLabel htmlFor='device-id'>ID</FieldLabel>
+                <Input id='device-id' value={device.id} disabled readOnly />
+              </Field>
+            )}
+            <form.AppField
+              name='name'
+              children={(field) => <field.TextField label='Name' required />}
+            />
+          </FieldGroup>
+        </CardContent>
+      </Card>
       <FormFooter
         mode={device ? 'edit' : 'create'}
         pending={create.isPending || update.isPending}

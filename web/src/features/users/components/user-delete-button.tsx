@@ -6,7 +6,7 @@ import { deleteUsersAndRefresh } from '../api/mutations';
 export function UserDeleteButton({ id }: { id: number }) {
   return (
     <DeleteRecordButton
-      title='Delete User'
+      title='Delete this user?'
       onDelete={() => deleteUsersAndRefresh([id])}
       redirectTo='/dashboard/users'
     />

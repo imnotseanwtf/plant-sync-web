@@ -1,11 +1,10 @@
 import { notFound } from 'next/navigation';
 import PageContainer from '@/components/layout/page-container';
-import { PageHeader } from '@/components/resource/page-header';
 import { getPlantOverview } from '@/features/plants/api/service';
 import { PlantDeleteButton } from '@/features/plants/components/plant-delete-button';
 import { PlantForm } from '@/features/plants/components/plant-form';
-import { SensorValueTable } from '@/features/plants/components/sensor-value-table';
 import { PlantWidgets } from '@/features/plants/components/plant-widgets';
+import { SensorValueTable } from '@/features/plants/components/sensor-value-table';
 
 export const metadata = { title: 'Edit Plant' };
 
@@ -19,13 +18,12 @@ export default async function EditPlantPage({ params }: { params: Promise<{ plan
   if (!overview) notFound();
 
   return (
-    <PageContainer>
-      <div className='flex flex-col gap-6'>
-        <PageHeader
-          breadcrumbs={[{ label: 'Plants', href: '/dashboard/plants' }, { label: 'Edit' }]}
-          title='Edit Plant'
-          actions={<PlantDeleteButton id={id} />}
-        />
+    <PageContainer
+      pageTitle='Edit Plant'
+      pageDescription='Live readings and irrigation targets.'
+      pageHeaderAction={<PlantDeleteButton id={id} />}
+    >
+      <div className='flex flex-col gap-4'>
         <PlantWidgets plantId={id} initial={overview} />
         <PlantForm plant={overview.plant} />
         <SensorValueTable plantId={id} initial={overview} />
