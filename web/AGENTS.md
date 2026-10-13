@@ -2,6 +2,13 @@
 
 This file provides essential information for AI coding agents working on this project. It contains project-specific details, conventions, and guidelines that complement the README.
 
+> **This project (Plant Sync) differs from the starter text below:**
+> - Data comes from PostgreSQL through **Prisma** (`prisma/schema.prisma`, client in `src/lib/prisma.ts`), not mock APIs.
+> - Each feature's `api/service.ts` is a `'use server'` file; **every exported action must call `requireUser()`** (`src/lib/auth/current-user.ts`) because actions are public endpoints. Return `ActionResult` (`src/lib/action-result.ts`) and unwrap it in `mutations.ts`.
+> - Server-only DB helpers live in `src/lib/db-helpers.ts`; never import Prisma runtime code from a client-reachable module.
+> - Auth is a signed session cookie (`src/lib/auth/*`), not Clerk. ESP32 endpoints under `src/app/api` use `DEVICE_API_KEY` and are excluded from `src/proxy.ts`.
+> - Invalidate queries inside `mutationFn`, not `onSuccess`: components override `onSuccess` when spreading mutation options.
+
 ---
 
 ## Project Overview
