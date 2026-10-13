@@ -1,12 +1,22 @@
 import * as z from 'zod';
 
-export const userSchema = z.object({
-  first_name: z.string().min(2, 'First name must be at least 2 characters'),
-  last_name: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email'),
-  phone: z.string().min(1, 'Phone number is required'),
-  role: z.string().min(1, 'Please select a role'),
-  status: z.string().min(1, 'Please select a status')
+const base = {
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(255),
+  email: z.string().trim().toLowerCase().pipe(z.email('Please enter a valid email'))
+};
+
+export const createUserSchema = z.object({
+  ...base,
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72)
 });
 
-export type UserFormValues = z.infer<typeof userSchema>;
+/** Leave the password empty to keep the current one. */
+export const updateUserSchema = z.object({
+  ...base,
+  password: z.union([
+    z.literal(''),
+    z.string().min(8, 'Password must be at least 8 characters').max(72)
+  ])
+});
+
+export type UserFormValues = z.infer<typeof createUserSchema>;

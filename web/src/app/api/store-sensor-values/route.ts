@@ -30,8 +30,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const { device_identifier_id, moisture_level, humidity, temperature, light_intensity, is_irrigating } =
-    parsed.data;
+  const {
+    device_identifier_id,
+    moisture_level,
+    humidity,
+    temperature,
+    light_intensity,
+    is_irrigating
+  } = parsed.data;
 
   const device = await prisma.deviceIdentifier.findUnique({
     where: { id: device_identifier_id },

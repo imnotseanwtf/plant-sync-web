@@ -1,16 +1,15 @@
 import KBar from '@/components/kbar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import Header from '@/components/layout/header';
-import { InfoSidebar } from '@/components/layout/info-sidebar';
 import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { auth } from '@clerk/nextjs/server';
+import { requireUser } from '@/lib/auth/current-user';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 
 export const metadata: Metadata = {
-  title: 'Next Shadcn Dashboard Starter',
-  description: 'Basic dashboard with Next.js and Shadcn',
+  title: 'Plant Sync',
+  description: 'Monitor plants and control smart irrigation',
   robots: {
     index: false,
     follow: false
@@ -18,8 +17,8 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  // Gate the whole /dashboard segment: redirect to sign-in when signed out.
-  await auth.protect();
+  // proxy.ts already redirects signed-out visitors; this also rejects deleted users.
+  const user = await requireUser();
   // Persisting the sidebar state in the cookie.
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
@@ -32,13 +31,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         >
           Skip to content
         </a>
-        <AppSidebar />
+        <AppSidebar user={user} />
         <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
           <Header />
-          <InfobarProvider defaultOpen={false}>
-            {children}
-            <InfoSidebar side='right' />
-          </InfobarProvider>
+          <InfobarProvider defaultOpen={false}>{children}</InfobarProvider>
         </SidebarInset>
       </SidebarProvider>
     </KBar>

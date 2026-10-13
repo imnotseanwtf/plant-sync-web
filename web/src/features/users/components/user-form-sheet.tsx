@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FieldGroup } from '@/components/ui/field';
-import { useAppForm } from '@/lib/form';
 import { LoadingButton } from '@/components/ui/loading-button';
 import {
   Sheet,
@@ -14,21 +13,15 @@ import {
   SheetTitle
 } from '@/components/ui/sheet';
 import { Icons } from '@/components/icons';
+import { useAppForm } from '@/lib/form';
 import { useMutation } from '@tanstack/react-query';
-import { createUserMutation, updateUserMutation } from '../api/mutations';
-import type { User } from '../api/types';
 import { toast } from 'sonner';
-import { userSchema, type UserFormValues } from '../schemas/user';
-import { ROLE_OPTIONS } from './users-table/options';
-
-const STATUS_OPTIONS = [
-  { value: 'Active', label: 'Active' },
-  { value: 'Inactive', label: 'Inactive' },
-  { value: 'Invited', label: 'Invited' }
-];
+import { createUserMutation, updateUserMutation } from '../api/mutations';
+import type { AppUser } from '../api/types';
+import { createUserSchema, updateUserSchema, type UserFormValues } from '../schemas/user';
 
 interface UserFormSheetProps {
-  user?: User;
+  user?: AppUser;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -43,7 +36,7 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
       onOpenChange(false);
       form.reset();
     },
-    onError: () => toast.error("Couldn't create user. Try again.")
+    onError: (e) => toast.error(e.message)
   });
 
   const updateMutation = useMutation({
@@ -52,20 +45,17 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
       toast.success('User updated');
       onOpenChange(false);
     },
-    onError: () => toast.error("Couldn't update user. Try again.")
+    onError: (e) => toast.error(e.message)
   });
 
   const form = useAppForm({
     defaultValues: {
-      first_name: user?.first_name ?? '',
-      last_name: user?.last_name ?? '',
+      name: user?.name ?? '',
       email: user?.email ?? '',
-      phone: user?.phone ?? '',
-      role: user?.role ?? '',
-      status: user?.status ?? 'Active'
+      password: ''
     } as UserFormValues,
     validators: {
-      onSubmit: userSchema
+      onSubmit: (isEdit ? updateUserSchema : createUserSchema) as typeof createUserSchema
     },
     onSubmit: async ({ value }) => {
       if (isEdit) {
@@ -85,36 +75,27 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
           <SheetTitle>{isEdit ? 'Edit User' : 'New User'}</SheetTitle>
           <SheetDescription>
             {isEdit
-              ? 'Update the user details below.'
-              : 'Fill in the details to create a new user.'}
+              ? 'Update the user details. Leave the password empty to keep it.'
+              : 'Create a user who can sign in to the dashboard.'}
           </SheetDescription>
         </SheetHeader>
 
         <div className='flex-1 overflow-auto'>
           <form
             id='user-form-sheet'
-            className='space-y-4 p-4 md:p-4'
+            className='space-y-4 p-4'
             onSubmit={(e) => {
               e.preventDefault();
               form.handleSubmit();
             }}
           >
             <FieldGroup>
-              <div className='grid grid-cols-2 gap-4'>
-                <form.AppField
-                  name='first_name'
-                  children={(field) => (
-                    <field.TextField label='First Name' required placeholder='John' />
-                  )}
-                />
-                <form.AppField
-                  name='last_name'
-                  children={(field) => (
-                    <field.TextField label='Last Name' required placeholder='Doe' />
-                  )}
-                />
-              </div>
-
+              <form.AppField
+                name='name'
+                children={(field) => (
+                  <field.TextField label='Name' required placeholder='Jane Doe' />
+                )}
+              />
               <form.AppField
                 name='email'
                 children={(field) => (
@@ -122,38 +103,19 @@ export function UserFormSheet({ user, open, onOpenChange }: UserFormSheetProps) 
                     label='Email'
                     required
                     type='email'
-                    placeholder='john@example.com'
+                    placeholder='jane@example.com'
                   />
                 )}
               />
-
               <form.AppField
-                name='phone'
+                name='password'
                 children={(field) => (
-                  <field.TextField label='Phone' required type='tel' placeholder='(555) 123-4567' />
-                )}
-              />
-
-              <form.AppField
-                name='role'
-                children={(field) => (
-                  <field.SelectField
-                    label='Role'
-                    required
-                    options={ROLE_OPTIONS}
-                    placeholder='Select role'
-                  />
-                )}
-              />
-
-              <form.AppField
-                name='status'
-                children={(field) => (
-                  <field.SelectField
-                    label='Status'
-                    required
-                    options={STATUS_OPTIONS}
-                    placeholder='Select status'
+                  <field.TextField
+                    label={isEdit ? 'New password' : 'Password'}
+                    required={!isEdit}
+                    type='password'
+                    autoComplete='new-password'
+                    description='At least 8 characters.'
                   />
                 )}
               />

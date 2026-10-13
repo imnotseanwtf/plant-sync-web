@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { deleteUserMutation } from '../../api/mutations';
-import type { User } from '../../api/types';
+import type { AppUser } from '../../api/types';
 import { Icons } from '@/components/icons';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { UserFormSheet } from '../user-form-sheet';
 
 interface CellActionProps {
-  data: User;
+  data: AppUser;
 }
 
 export function CellAction({ data }: CellActionProps) {
@@ -31,9 +31,7 @@ export function CellAction({ data }: CellActionProps) {
       toast.success('User deleted successfully');
       setDeleteOpen(false);
     },
-    onError: () => {
-      toast.error('Failed to delete user');
-    }
+    onError: (e) => toast.error(e.message)
   });
 
   return (

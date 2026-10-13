@@ -1,27 +1,18 @@
 'use client';
-import { Badge } from '@/components/ui/badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
-import type { User } from '../../api/types';
-import { Column, ColumnDef } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
+import type { Column, ColumnDef } from '@tanstack/react-table';
+import type { AppUser } from '../../api/types';
 import { CellAction } from './cell-action';
-import { ROLE_OPTIONS } from './options';
 
-export const columns: ColumnDef<User>[] = [
+export const columns: ColumnDef<AppUser>[] = [
   {
     id: 'name',
-    accessorFn: (row) => `${row.first_name} ${row.last_name}`,
-    header: ({ column }: { column: Column<User, unknown> }) => (
+    accessorKey: 'name',
+    header: ({ column }: { column: Column<AppUser, unknown> }) => (
       <DataTableColumnHeader column={column} title='Name' />
     ),
-    cell: ({ row }) => (
-      <div className='flex flex-col'>
-        <span className='font-medium'>
-          {row.original.first_name} {row.original.last_name}
-        </span>
-        <span className='text-muted-foreground text-xs'>{row.original.email}</span>
-      </div>
-    ),
+    cell: ({ row }) => <span className='font-medium'>{row.original.name}</span>,
     meta: {
       label: 'Name',
       placeholder: 'Search users...',
@@ -31,39 +22,10 @@ export const columns: ColumnDef<User>[] = [
     enableColumnFilter: true
   },
   {
-    accessorKey: 'phone',
-    header: 'PHONE'
-  },
-  {
-    id: 'role',
-    accessorKey: 'role',
-    enableSorting: false,
-    header: ({ column }: { column: Column<User, unknown> }) => (
-      <DataTableColumnHeader column={column} title='Role' />
-    ),
-    cell: ({ cell }) => {
-      return (
-        <Badge variant='outline' className='capitalize'>
-          {cell.getValue<User['role']>()}
-        </Badge>
-      );
-    },
-    enableColumnFilter: true,
-    meta: {
-      label: 'roles',
-      variant: 'multiSelect' as const,
-      options: ROLE_OPTIONS
-    }
-  },
-  {
-    accessorKey: 'status',
-    header: 'STATUS',
-    cell: ({ cell }) => {
-      const status = cell.getValue<User['status']>();
-      const variant =
-        status === 'Active' ? 'default' : status === 'Inactive' ? 'secondary' : 'outline';
-      return <Badge variant={variant}>{status}</Badge>;
-    }
+    id: 'email',
+    accessorKey: 'email',
+    header: 'EMAIL',
+    enableSorting: false
   },
   {
     id: 'actions',
