@@ -28,6 +28,7 @@ import { navGroups } from '@/config/nav-config';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import Link from 'next/link';
+import { BrandLogo, BrandMark } from '@/components/brand-logo';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '@/components/icons';
@@ -45,10 +46,14 @@ export default function AppSidebar({ user }: { user: { name: string; email: stri
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader>
-        <div className='flex items-center gap-2 px-2 py-1 font-semibold'>
-          <Icons.plant className='text-primary size-5' />
-          <span className='truncate group-data-[collapsible=icon]:hidden'>Plant Sync</span>
-        </div>
+        <Link
+          href='/dashboard/overview'
+          aria-label='Plant Sync dashboard'
+          className='flex items-center px-2 py-1'
+        >
+          <BrandLogo className='h-14 group-data-[collapsible=icon]:hidden' />
+          <BrandMark className='hidden size-8 group-data-[collapsible=icon]:block' />
+        </Link>
       </SidebarHeader>
       <SidebarContent className='overflow-x-hidden'>
         {filteredGroups.map((group) => (

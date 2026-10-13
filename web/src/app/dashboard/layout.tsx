@@ -21,7 +21,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const user = await requireUser();
   // Persisting the sidebar state in the cookie.
   const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
+  // Expanded by default (like the Filament panel) until the user collapses it.
+  const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false';
   return (
     <KBar>
       <SidebarProvider defaultOpen={defaultOpen}>

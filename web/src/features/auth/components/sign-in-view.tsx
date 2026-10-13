@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BrandLogo } from '@/components/brand-logo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -13,11 +14,12 @@ export function SignInView() {
   const [state, action, isPending] = useActionState<SignInState, FormData>(signIn, {});
 
   return (
-    <div className='flex min-h-svh items-center justify-center p-4'>
+    <div className='flex min-h-svh flex-col items-center justify-center gap-6 p-4'>
+      <BrandLogo className='h-24' />
       <Card className='w-full max-w-sm'>
         <CardHeader>
-          <CardTitle>Plant Sync</CardTitle>
-          <CardDescription>Sign in to manage your plants and devices.</CardDescription>
+          <CardTitle>Sign in</CardTitle>
+          <CardDescription>Manage your plants and devices.</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={action} className='flex flex-col gap-4'>

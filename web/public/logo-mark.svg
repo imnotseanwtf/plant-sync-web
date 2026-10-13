@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 14 112 114" fill="none">
+  <defs>
+    <linearGradient id="wifi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1E88F5"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7BC043"/>
+      <stop offset="1" stop-color="#1B8E3E"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4FC3F7"/>
+      <stop offset="1" stop-color="#0B5FD8"/>
+    </linearGradient>
+  </defs>
+  <!-- wifi arcs -->
+  <g stroke="url(#wifi)" stroke-width="7" stroke-linecap="round" transform="translate(0 8)">
+    <path d="M28.8 36.4A46 46 0 0 1 99.2 36.4"/>
+    <path d="M38 44.1A34 34 0 0 1 90 44.1"/>
+    <path d="M47.2 51.9A22 22 0 0 1 80.8 51.9"/>
+  </g>
+  <!-- stem and signal dot -->
+  <path d="M64 92V74" stroke="#2E9E48" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="64" cy="68" r="5.5" fill="url(#wifi)"/>
+  <!-- leaves -->
+  <path d="M64 100C50 100 33 90 31 66C48 65 62 76 64 100Z" fill="url(#leaf)"/>
+  <path d="M64 100C78 100 95 90 97 66C80 65 66 76 64 100Z" fill="url(#leaf)"/>
+  <path d="M63 97C57 85 48 76 38 70" stroke="#fff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+  <path d="M65 97C71 85 80 76 90 70" stroke="#fff" stroke-opacity=".45" stroke-width="2" stroke-linecap="round"/>
+  <!-- water drop -->
+  <path d="M64 84C64 84 47 101 47 111a17 17 0 0 0 34 0C81 101 64 84 64 84Z" fill="url(#drop)" stroke="#fff" stroke-width="3"/>
+  <path d="M56 108c0-4 3-8 6-11" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>
+</svg>
