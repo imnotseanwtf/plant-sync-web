@@ -1,45 +1,47 @@
 import { cn } from '@/lib/utils';
 
 /**
- * The Plant Sync emblem: a rounded pot drawn in one line, with a stem that curls into a spiral
- * and two leaves. Inline SVG so the line follows the text color (light and dark mode).
+ * The Plant Sync emblem is the letter "P" of "plant", drawn as one rounded line: the stem is a
+ * sprout, the bowl is a pot-round loop, and two leaves grow inside the counter. Inline SVG so the
+ * line follows the text color (light and dark mode).
  */
 export function BrandMark({ className }: { className?: string }) {
   return (
     <svg
-      viewBox='0 0 120 140'
+      viewBox='0 0 72 100'
       fill='none'
       role='img'
-      aria-label='Plant Sync'
+      aria-label='P'
       className={cn('shrink-0 text-[#0e4f5c] dark:text-[#d9f0ea]', className)}
     >
-      <g stroke='currentColor' strokeWidth={7} strokeLinecap='round' strokeLinejoin='round'>
-        <path d='M18 46V84A42 42 0 0 0 102 84V62' />
-        <path d='M60 126V38C60 18 86 14 89 31C91 45 72 50 68 38C65 29 76 25 80 32' />
+      <g stroke='currentColor' strokeWidth={10} strokeLinecap='round' strokeLinejoin='round'>
+        <path d='M16 96V5H38C54 5 66 17 66 34C66 51 54 63 38 63H16' />
       </g>
       <g className='fill-[#43b049] dark:fill-[#5bd36a]'>
-        <path d='M60 100C40 100 29 88 28 73C46 72 59 83 60 100Z' />
-        <path d='M60 84C61 67 73 57 91 58C91 75 78 86 60 84Z' />
+        <path d='M33 50C22 48 18 38 20 27C31 27 38 35 33 50Z' />
+        <path d='M36 46C37 35 44 27 55 27C56 38 49 46 36 46Z' />
       </g>
     </svg>
   );
 }
 
-/** Emblem + a two-line lowercase wordmark ("plant" over "sync"). */
+/** "P" emblem + "lant" so it reads "plant", with a small "sync" tag underneath. */
 export function BrandLogo({ size = 'md', className }: { size?: 'md' | 'lg'; className?: string }) {
   const lg = size === 'lg';
   return (
-    <span className={cn('flex items-center', lg ? 'gap-5' : 'gap-3', className)}>
-      <BrandMark className={lg ? 'h-24 w-auto' : 'h-12 w-auto'} />
-      <span
-        style={{ lineHeight: 0.92 }}
-        className={cn(
-          'flex flex-col font-[family-name:var(--font-outfit)] font-medium tracking-tight text-[#0e4f5c] lowercase dark:text-[#d9f0ea]',
-          lg ? 'text-6xl' : 'text-[26px]'
-        )}
-      >
-        <span>plant</span>
-        <span>sync</span>
+    <span
+      className={cn(
+        'inline-flex flex-col font-[family-name:var(--font-outfit)] font-medium text-[#0e4f5c] dark:text-[#d9f0ea]',
+        lg ? 'text-7xl' : 'text-[34px]',
+        className
+      )}
+    >
+      <span className='inline-flex items-baseline leading-none tracking-tight'>
+        <BrandMark className='h-[0.72em] w-auto' />
+        <span className='-ml-[0.02em]'>lant</span>
+      </span>
+      <span className='mt-[0.08em] pl-[0.5em] text-[0.3em] leading-none tracking-[0.42em] text-[#43b049] uppercase dark:text-[#5bd36a]'>
+        sync
       </span>
     </span>
   );

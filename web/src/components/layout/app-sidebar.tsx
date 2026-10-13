@@ -49,15 +49,15 @@ export default function AppSidebar({ user }: { user: { name: string; email: stri
         <Link
           href='/dashboard/overview'
           aria-label='Plant Sync dashboard'
-          className='flex items-center px-2 py-1'
+          className='flex h-12 items-center px-2 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0'
         >
           <BrandLogo className='group-data-[collapsible=icon]:hidden' />
-          <BrandMark className='hidden size-8 group-data-[collapsible=icon]:block' />
+          <BrandMark className='hidden h-7 w-auto group-data-[collapsible=icon]:block' />
         </Link>
       </SidebarHeader>
       <SidebarContent className='overflow-x-hidden'>
         {filteredGroups.map((group) => (
-          <SidebarGroup key={group.label || 'ungrouped'} className='py-0'>
+          <SidebarGroup key={group.label || 'ungrouped'} className='py-1'>
             {group.label && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
             <SidebarMenu>
               {group.items.map((item) => {
