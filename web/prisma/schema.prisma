@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model DeviceIdentifier {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  name         String        @unique @db.VarChar(255)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  plant        Plant?
+  sensorValues SensorValue[]
+
+  @@map("device_identifiers")
+}
+
+model Plant {
+  id                 BigInt           @id @default(autoincrement())
+  deviceIdentifierId String           @unique @map("device_identifier_id") @db.Uuid
+  name               String           @db.VarChar(255)
+  moistureLevelMin   Float            @map("moisture_level_min")
+  moistureLevelMax   Float            @map("moisture_level_max")
+  humidity           Float
+  temperature        Float
+  lightIntensity     Float            @map("light_intensity")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deviceIdentifier   DeviceIdentifier @relation(fields: [deviceIdentifierId], references: [id], onDelete: Cascade)
+
+  @@map("plants")
+}
+
+model SensorValue {
+  id                 BigInt           @id @default(autoincrement())
+  deviceIdentifierId String           @map("device_identifier_id") @db.Uuid
+  moistureLevel      Float            @map("moisture_level")
+  humidity           Float
+  temperature        Float
+  lightIntensity     Float            @map("light_intensity")
+  isIrrigating       Boolean          @default(false) @map("is_irrigating")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt          DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  deviceIdentifier   DeviceIdentifier @relation(fields: [deviceIdentifierId], references: [id], onDelete: Cascade)
+
+  @@index([deviceIdentifierId, createdAt(sort: Desc)])
+  @@map("sensor_values")
+}
+
+model User {
+  id              BigInt    @id @default(autoincrement())
+  name            String    @db.VarChar(255)
+  email           String    @unique @db.VarChar(255)
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamp(0)
+  password        String    @db.VarChar(255)
+  rememberToken   String?   @map("remember_token") @db.VarChar(100)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("users")
+}
