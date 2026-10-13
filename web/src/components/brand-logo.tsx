@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-/** The Plant Sync app icon (a sprout with a water drop under a signal arc). */
+/** The Plant Sync app icon: a sprout (Plant) inside circular arrows (Sync). */
 export function BrandMark({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -14,7 +14,7 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-/** Icon + wordmark lockup. The wordmark uses the app font, so it follows light/dark mode. */
+/** Icon + wordmark lockup: "Plant" in the text color, "Sync" in the brand green. */
 export function BrandLogo({ size = 'md', className }: { size?: 'md' | 'lg'; className?: string }) {
   return (
     <span className={cn('flex items-center', size === 'lg' ? 'gap-3' : 'gap-2.5', className)}>
@@ -25,7 +25,7 @@ export function BrandLogo({ size = 'md', className }: { size?: 'md' | 'lg'; clas
           size === 'lg' ? 'text-3xl' : 'text-lg leading-none'
         )}
       >
-        Plant Sync
+        Plant <span className='text-primary'>Sync</span>
       </span>
     </span>
   );

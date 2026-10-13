@@ -8,26 +8,22 @@
       <stop offset="0" stop-color="#fff" stop-opacity=".22"/>
       <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#BAE6FD"/>
-      <stop offset="1" stop-color="#38BDF8"/>
-    </linearGradient>
   </defs>
   <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#tile)"/>
   <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#gloss)"/>
-  <!-- signal arcs -->
-  <g stroke="#fff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round">
-    <path d="M52 29a17 17 0 0 1 24 0"/>
-    <path d="M44.5 21.5a27.5 27.5 0 0 1 39 0" stroke-opacity=".6"/>
+  <!-- Sync: two circular arrows -->
+  <g stroke="#E0F2FE" stroke-width="7" stroke-linecap="round">
+    <path d="M27.3 54.2A38 38 0 0 1 92.7 39.1"/>
+    <path d="M100.7 73.8A38 38 0 0 1 35.3 88.9"/>
   </g>
-  <circle cx="64" cy="36" r="3.4" fill="#fff"/>
-  <!-- sprout -->
-  <path d="M64 96V72" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-  <path d="M64 80C46 82 30 72 27 52C47 50 62 62 64 80Z" fill="#fff"/>
-  <path d="M64 70C66 50 80 40 101 40C101 62 86 74 64 70Z" fill="#fff"/>
-  <path d="M60 72C54 66 45 60 36 57" stroke="#059669" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M68 66C74 58 84 51 94 47" stroke="#059669" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- drop -->
-  <path d="M64 88C64 88 52 100 52 108a12 12 0 0 0 24 0C76 100 64 88 64 88Z" fill="url(#drop)" stroke="#fff" stroke-width="2.5"/>
-  <path d="M58.5 108c0-3 2-6 4-8" stroke="#fff" stroke-opacity=".9" stroke-width="2.5" stroke-linecap="round"/>
+  <g fill="#E0F2FE" stroke="#E0F2FE" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M102.2 34.1L102.6 51.6L85.7 47.1Z"/>
+    <path d="M25.8 93.9L25.4 76.4L42.3 80.9Z"/>
+  </g>
+  <!-- Plant: sprout -->
+  <path d="M64 90V71" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M64 80C51 81 41 73 40 58C53 57 63 65 64 80Z" fill="#fff"/>
+  <path d="M64 74C65 59 74 50 88 50C88 64 78 75 64 74Z" fill="#fff"/>
+  <path d="M61 75C56 70 50 65.500 44 63" stroke="#059669" stroke-opacity=".35" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M67 70C71 63 77 58 83 55.500" stroke="#059669" stroke-opacity=".35" stroke-width="2.2" stroke-linecap="round"/>
 </svg>
