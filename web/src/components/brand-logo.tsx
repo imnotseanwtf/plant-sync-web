@@ -1,23 +1,32 @@
 import { cn } from '@/lib/utils';
 
-/** The full Plant Sync logo. The artwork has dark text, so it sits on a white chip in dark mode. */
-export function BrandLogo({ className }: { className?: string }) {
+/** The Plant Sync app icon (a sprout with a water drop under a signal arc). */
+export function BrandMark({ className }: { className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src='/logo.png'
+      src='/logo-mark.svg'
       alt='Plant Sync'
-      width={480}
-      height={221}
-      className={cn('w-auto dark:rounded-md dark:bg-white dark:p-1', className)}
+      width={128}
+      height={128}
+      className={cn('aspect-square shrink-0', className)}
     />
   );
 }
 
-/** Just the emblem (Wi-Fi sprout + water drop), for tight spaces like the collapsed sidebar. */
-export function BrandMark({ className }: { className?: string }) {
+/** Icon + wordmark lockup. The wordmark uses the app font, so it follows light/dark mode. */
+export function BrandLogo({ size = 'md', className }: { size?: 'md' | 'lg'; className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src='/logo-mark.svg' alt='Plant Sync' className={cn('aspect-square', className)} />
+    <span className={cn('flex items-center', size === 'lg' ? 'gap-3' : 'gap-2.5', className)}>
+      <BrandMark className={size === 'lg' ? 'size-14' : 'size-9'} />
+      <span
+        className={cn(
+          'font-semibold tracking-tight',
+          size === 'lg' ? 'text-3xl' : 'text-lg leading-none'
+        )}
+      >
+        Plant Sync
+      </span>
+    </span>
   );
 }

@@ -51,7 +51,7 @@ export default function AppSidebar({ user }: { user: { name: string; email: stri
           aria-label='Plant Sync dashboard'
           className='flex items-center px-2 py-1'
         >
-          <BrandLogo className='h-14 group-data-[collapsible=icon]:hidden' />
+          <BrandLogo className='group-data-[collapsible=icon]:hidden' />
           <BrandMark className='hidden size-8 group-data-[collapsible=icon]:block' />
         </Link>
       </SidebarHeader>

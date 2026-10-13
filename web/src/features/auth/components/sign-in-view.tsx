@@ -15,7 +15,7 @@ export function SignInView() {
 
   return (
     <div className='flex min-h-svh flex-col items-center justify-center gap-6 p-4'>
-      <BrandLogo className='h-24' />
+      <BrandLogo size='lg' />
       <Card className='w-full max-w-sm'>
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
