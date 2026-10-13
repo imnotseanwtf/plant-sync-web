@@ -1,8 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { Icons } from '@/components/icons';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,6 +35,152 @@ export function chartTime(iso: string) {
   const d = new Date(iso);
   const month = d.toLocaleString('en-US', { month: 'short' });
   return `${month} ${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Axis label: just the clock time, like the starter's compact charts. */
+function shortTime(iso: string) {
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+type Point = { time: string; full: string; moisture: number; temperature: number };
+
+/** Change between the last two readings, shown as the trend badge (like the starter's graphs). */
+function TrendBadge({ delta, unit }: { delta: number | null; unit: string }) {
+  if (delta === null) return null;
+  const Icon = delta >= 0 ? Icons.trendingUp : Icons.trendingDown;
+  return (
+    <Badge variant='outline'>
+      <Icon />
+      {delta >= 0 ? '+' : ''}
+      {round(delta)}
+      {unit}
+    </Badge>
+  );
+}
+
+const lastDelta = (values: number[]) =>
+  values.length >= 2 ? values[values.length - 1] - values[values.length - 2] : null;
+
+const tooltipLabel = (_: unknown, payload: readonly { payload?: unknown }[]) =>
+  (payload?.[0]?.payload as Point | undefined)?.full;
+
+/** The starter's dotted area graph, showing soil moisture. */
+function MoistureGraph({ data }: { data: Point[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Soil Moisture
+          <TrendBadge delta={lastDelta(data.map((d) => d.moisture))} unit='%' />
+        </CardTitle>
+        <CardDescription>Last {data.length} readings, refreshed every 5 seconds</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {data.length === 0 ? (
+          <p className='text-muted-foreground py-16 text-center text-sm'>No readings yet.</p>
+        ) : (
+          <ChartContainer config={moistureConfig}>
+            <AreaChart accessibilityLayer data={data}>
+              <CartesianGrid vertical={false} strokeDasharray='3 3' />
+              <XAxis dataKey='time' tickLine={false} axisLine={false} tickMargin={8} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent labelFormatter={tooltipLabel} />}
+              />
+              <defs>
+                <DottedPattern id='moisture-dots' color='var(--color-moisture)' />
+              </defs>
+              <Area
+                dataKey='moisture'
+                type='natural'
+                fill='url(#moisture-dots)'
+                fillOpacity={0.4}
+                stroke='var(--color-moisture)'
+                strokeWidth={0.8}
+              />
+            </AreaChart>
+          </ChartContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** The starter's hatched bar graph, showing temperature. */
+function TemperatureGraph({ data }: { data: Point[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Temperature
+          <TrendBadge delta={lastDelta(data.map((d) => d.temperature))} unit='°C' />
+        </CardTitle>
+        <CardDescription>Last {data.length} readings, refreshed every 5 seconds</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {data.length === 0 ? (
+          <p className='text-muted-foreground py-16 text-center text-sm'>No readings yet.</p>
+        ) : (
+          <ChartContainer config={temperatureConfig}>
+            <BarChart accessibilityLayer data={data}>
+              <CartesianGrid vertical={false} strokeDasharray='3 3' />
+              <XAxis dataKey='time' tickLine={false} tickMargin={10} axisLine={false} />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator='dashed' labelFormatter={tooltipLabel} />}
+              />
+              <Bar
+                dataKey='temperature'
+                fill='var(--color-temperature)'
+                shape={<HatchedBar />}
+                radius={4}
+              />
+            </BarChart>
+          </ChartContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DottedPattern({ id, color }: { id: string; color: string }) {
+  return (
+    <pattern id={id} x='0' y='0' width='7' height='7' patternUnits='userSpaceOnUse'>
+      <circle cx='5' cy='5' r='1.5' fill={color} opacity={0.5} />
+    </pattern>
+  );
+}
+
+function HatchedBar(props: React.SVGProps<SVGRectElement>) {
+  const { fill, x, y, width, height } = props;
+  return (
+    <>
+      <rect
+        rx={4}
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        stroke='none'
+        fill='url(#hatched-bar)'
+      />
+      <defs>
+        <pattern
+          id='hatched-bar'
+          x='0'
+          y='0'
+          width='5'
+          height='5'
+          patternUnits='userSpaceOnUse'
+          patternTransform='rotate(-45)'
+        >
+          <rect width='10' height='10' opacity={0.5} fill={fill} />
+          <rect width='1' height='10' fill={fill} />
+        </pattern>
+      </defs>
+    </>
+  );
 }
 
 export function usePlantOverview(plantId: number, initialData: PlantOverview) {
@@ -72,11 +220,12 @@ export function PlantWidgets({ plantId, initial }: { plantId: number; initial: P
   const { latest, irrigatedToday, readings } = usePlantOverview(plantId, initial);
 
   // Last 10 readings, oldest first.
-  const series = readings
+  const series: Point[] = readings
     .slice(0, 10)
     .toReversed()
     .map((r) => ({
-      time: chartTime(r.createdAt),
+      time: shortTime(r.createdAt),
+      full: chartTime(r.createdAt),
       moisture: round(r.moistureLevel),
       temperature: round(r.temperature)
     }));
@@ -105,91 +254,8 @@ export function PlantWidgets({ plantId, initial }: { plantId: number; initial: P
       </div>
 
       <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Soil Moisture</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={moistureConfig} className='h-[300px] w-full'>
-              <AreaChart data={series} margin={{ left: 4, right: 8, bottom: 24 }}>
-                <CartesianGrid vertical={false} strokeDasharray='3 3' />
-                <XAxis
-                  dataKey='time'
-                  angle={-45}
-                  textAnchor='end'
-                  height={70}
-                  tickLine={false}
-                  interval={0}
-                  fontSize={11}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tickLine={false}
-                  axisLine={false}
-                  width={52}
-                  label={{
-                    value: 'Moisture Level (%)',
-                    angle: -90,
-                    position: 'insideLeft',
-                    style: { textAnchor: 'middle' }
-                  }}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Area
-                  dataKey='moisture'
-                  type='linear'
-                  stroke='var(--color-moisture)'
-                  strokeWidth={2.5}
-                  fill='var(--color-moisture)'
-                  fillOpacity={0.25}
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Temperature</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={temperatureConfig} className='h-[300px] w-full'>
-              <BarChart data={series} margin={{ left: 4, right: 8, bottom: 24 }}>
-                <CartesianGrid vertical={false} strokeDasharray='3 3' />
-                <XAxis
-                  dataKey='time'
-                  angle={-45}
-                  textAnchor='end'
-                  height={70}
-                  tickLine={false}
-                  interval={0}
-                  fontSize={11}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  width={52}
-                  label={{
-                    value: 'Temperature (°C)',
-                    angle: -90,
-                    position: 'insideLeft',
-                    style: { textAnchor: 'middle' }
-                  }}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar
-                  dataKey='temperature'
-                  fill='var(--color-temperature)'
-                  radius={3}
-                  isAnimationActive={false}
-                >
-                  <LabelList dataKey='temperature' position='top' fontSize={10} />
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <MoistureGraph data={series} />
+        <TemperatureGraph data={series} />
       </div>
     </div>
   );
