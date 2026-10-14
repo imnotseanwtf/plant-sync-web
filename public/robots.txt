@@ -1,2 +1,6 @@
 User-agent: *
-Disallow:
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /v1/

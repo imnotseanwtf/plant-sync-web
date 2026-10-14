@@ -1,101 +1,72 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Plant Sync
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Smart plant irrigation: ESP32 boards report soil moisture, humidity, temperature and light; the server
+decides when to water, and a dashboard shows everything live.
 
-## About Laravel
+Built with Next.js 16 (App Router), React 19, shadcn/ui + Tailwind 4, TanStack Query/Table/Form,
+Prisma 7 and PostgreSQL. Scaffolded from
+[next-shadcn-dashboard-starter](https://github.com/Kiranism/next-shadcn-dashboard-starter) (MIT, see `LICENSE`).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## What's in it
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Area | Where |
+| --- | --- |
+| Device API for the ESP32 firmware | `src/app/api/store-sensor-values`, `src/app/api/irrigation-control/[deviceId]` |
+| Sign-in (session cookie, bcrypt) | `src/lib/auth/*`, `src/features/auth`, `src/proxy.ts` |
+| Dashboard, plants, devices, users | `src/features/*`, `src/app/dashboard/*` |
+| Database schema and migrations | `prisma/` |
+| ESP32 firmware | `esp32/` (repo root) |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Device API (unchanged contract from the Laravel version)
 
-## Learning Laravel
+- `POST /api/store-sensor-values` — JSON body `device_identifier_id`, `moisture_level`, `humidity`,
+  `temperature`, `light_intensity`, optional `is_irrigating`. Returns `201` with the new reading id.
+- `GET /api/irrigation-control/{deviceId}` — returns the bare JSON value `true` when the pump should run
+  (latest moisture <= the plant's minimum), otherwise `false`.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Set `DEVICE_API_KEY` to require an `X-Device-Key` header on both. Leave it empty to keep the endpoints open.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## Docker Setup
-
-This project now uses the same Docker folder layout as the reference app: `docker/`, `php/`, `nginx/`, `supervisor/`, a root `Dockerfile`, and a root `docker-compose.yaml`.
-
-### Start the stack
+## Local development
 
 ```bash
-docker compose up --build -d
+bun install                      # also runs `prisma generate`
+cp env.example.txt .env          # fill in DATABASE_URL and AUTH_SECRET (openssl rand -base64 48)
+bunx prisma migrate deploy       # apply migrations
+bun run user:create "Your Name" you@example.com 'a-strong-password'
+bun run dev                      # http://localhost:3000
 ```
 
-The app will be available at `http://localhost:8000`.
+Pointing `DATABASE_URL` at the database the Laravel app used works as-is: `0_init` is a baseline that is
+already satisfied by the existing tables, and `1_timestamp_defaults` adds the `created_at`/`updated_at`
+defaults Prisma needs. Existing users keep their passwords (Laravel's `$2y$` bcrypt hashes verify unchanged).
 
-PostgreSQL will be exposed on `localhost:5432` with these defaults:
+> Before running `1_timestamp_defaults` on real data, make sure no row has a NULL `created_at` or
+> `updated_at`; the migration makes both columns NOT NULL.
 
-- Database: `plant_sync_web`
-- Username: `plant_sync_web`
-- Password: `secret`
-
-### Stop the stack
+On an existing database, mark the baseline as applied first:
 
 ```bash
-docker compose down
+bunx prisma migrate resolve --applied 0_init
+bunx prisma migrate deploy
 ```
 
-To remove the database volume too:
+## Docker
 
 ```bash
-docker compose down -v
+export AUTH_SECRET="$(openssl rand -base64 48)"
+docker compose up -d --build
 ```
 
-### Useful commands
+`plant-sync-web.migrate` applies migrations and exits, then the app starts on `${APP_PORT:-8000}`. The
+ESP32 firmware calls `http://<host>/api/...`; either publish the app on port 80 (`APP_PORT=80`) or change
+`apiUrl` in `esp32/esp32.cpp`.
 
-Run Laravel commands inside the app container:
+## Scripts
 
-```bash
-docker compose exec plant-sync-web.app php artisan migrate
-docker compose exec plant-sync-web.app php artisan db:seed
-docker compose exec plant-sync-web.app php artisan test
-```
+`bun run dev | build | start | lint | typecheck | format`, `bun run user:create`, `bun run db:migrate`.
+
+## Notes
+
+- Timestamps are stored without a timezone and treated as UTC. "Irrigated today" counts UTC days.
+- Sign-in has no rate limiting; put it behind a reverse proxy that does if it is exposed to the internet.
+- Every server action calls `requireUser()`; they are public HTTP endpoints, so keep doing that when adding more.

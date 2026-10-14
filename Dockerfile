@@ -1,33 +1,69 @@
-FROM php:8.2-fpm
+# ============================================
+# Stage 1: Install dependencies
+# ============================================
 
-RUN useradd -m -g www-data plantsyncweb
+ARG NODE_VERSION=22-slim
 
-COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+FROM node:${NODE_VERSION} AS dependencies
 
-WORKDIR /var/www/html
+WORKDIR /app
 
-COPY . /var/www/html
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY php/php.ini /usr/local/etc/php/php.ini
-COPY supervisor/supervisor.conf /etc/supervisor/conf.d/supervisor.conf
+# bun resolves dependencies from bun.lock
+RUN npm install -g bun
 
-RUN apt-get update && apt-get install -y \
-    bash \
-    curl \
-    git \
-    nodejs \
-    npm \
-    postgresql-client \
-    supervisor \
-    unzip \
-    zip \
-    && rm -rf /var/lib/apt/lists/* \
-    && install-php-extensions bcmath exif gd intl mbstring pdo_pgsql pgsql zip opcache \
-    && chmod +x /usr/local/bin/entrypoint.sh \
-    && chown -R plantsyncweb:www-data /var/www/html \
-    && chmod -R 775 /var/www/html
+COPY package.json bun.lock* ./
 
-EXPOSE 9000
+# --ignore-scripts: the postinstall (`prisma generate`) needs the schema, which isn't copied yet
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --no-save --frozen-lockfile --ignore-scripts
 
-ENTRYPOINT ["entrypoint.sh"]
+# ============================================
+# Stage 2: Build the Next.js application
+# ============================================
+
+FROM node:${NODE_VERSION} AS builder
+
+WORKDIR /app
+
+# Prisma needs OpenSSL at build and run time
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV BUILD_STANDALONE=true
+
+# Generates the Prisma client (generated/prisma), then builds. Neither needs a live database.
+RUN npx prisma generate && NODE_ENV=production npm run build
+
+# ============================================
+# Stage 3: Production runner
+# ============================================
+
+FROM node:${NODE_VERSION} AS runner
+
+WORKDIR /app
+
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=builder --chown=node:node /app/public ./public
+
+# Create .next dir with correct permissions for prerender cache
+RUN mkdir .next && chown node:node .next
+
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+
+USER node
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
