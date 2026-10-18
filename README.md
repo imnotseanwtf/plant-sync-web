@@ -32,7 +32,7 @@ Set `DEVICE_API_KEY` to require an `X-Device-Key` header on both. Leave it empty
 bun install                      # also runs `prisma generate`
 cp .env.example .env              # fill in DATABASE_URL and AUTH_SECRET (openssl rand -base64 48)
 bunx prisma migrate deploy       # create the tables
-bun run db:seed                  # demo login (admin@example.com / password123), plants and readings
+bun run db:seed                  # demo login (admin@example.com / password), plants and readings
 # or just your own login: bun run user:create "Your Name" you@example.com 'a-strong-password'
 bun run dev                      # http://localhost:3000
 ```

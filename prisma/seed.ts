@@ -15,7 +15,7 @@ const demo = [
 async function main() {
   const name = process.env.SEED_USER_NAME || 'Admin';
   const email = (process.env.SEED_USER_EMAIL || 'admin@example.com').trim().toLowerCase();
-  const password = process.env.SEED_USER_PASSWORD || 'password123';
+  const password = process.env.SEED_USER_PASSWORD || 'password';
 
   await prisma.user.upsert({
     where: { email },
