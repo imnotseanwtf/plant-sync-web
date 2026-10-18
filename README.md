@@ -55,8 +55,8 @@ bunx prisma migrate deploy
 
 The `vercel-build` script runs `prisma migrate deploy` before `next build`, so the tables are created on
 every deploy. Set `DATABASE_URL` and `AUTH_SECRET` for the **Production and Preview** environments (the
-build needs them too); add `DIRECT_URL` if your host gives a separate non-pooled URL. Set
-`SEED_DATABASE=true` for one deploy to create the demo login, then remove it.
+build needs them too); add `DIRECT_URL` if your host gives a separate non-pooled URL. The seeder then runs on every
+build (idempotent; creates `admin@example.com` / `password` if missing). Set `SEED_DATABASE=false` to skip it.
 
 ## Docker
 
@@ -65,7 +65,7 @@ export AUTH_SECRET="$(openssl rand -base64 48)"
 docker compose up -d --build
 ```
 
-The app container also runs `prisma migrate deploy` on every start (so a fresh database gets its tables), and seeds when `SEED_DATABASE=true`. `plant-sync-web.migrate` applies migrations first and exits, then the app starts on `${APP_PORT:-8000}`. The
+The app container also runs `prisma migrate deploy` on every start (so a fresh database gets its tables), and runs the seeder (set `SEED_DATABASE=false` to skip). `plant-sync-web.migrate` applies migrations first and exits, then the app starts on `${APP_PORT:-8000}`. The
 ESP32 firmware calls `http://<host>/api/...`; either publish the app on port 80 (`APP_PORT=80`) or change
 `apiUrl` in `esp32/esp32.cpp`.
 

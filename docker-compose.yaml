@@ -26,7 +26,7 @@ services:
             DATABASE_URL: postgresql://${DB_USERNAME:-plant_sync_web}:${DB_PASSWORD:-secret}@plant-sync-web.database:5432/${DB_DATABASE:-plant_sync_web}?schema=public
             # Required: openssl rand -base64 48
             AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET (openssl rand -base64 48)}
-            # Run the idempotent seeder (demo login + plants) after migrations
+            # The idempotent seeder (demo login + plants) runs after migrations; set to false to skip
             SEED_DATABASE: ${SEED_DATABASE:-}
             SEED_USER_EMAIL: ${SEED_USER_EMAIL:-}
             SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-}
