@@ -8,6 +8,7 @@ export default defineConfig({
     seed: 'bun prisma/seed.ts'
   },
   datasource: {
-    url: process.env['DATABASE_URL']
+    // Migrations need a direct (non-pooled) connection when the host provides one
+    url: process.env['DIRECT_URL'] || process.env['DATABASE_URL']
   }
 });

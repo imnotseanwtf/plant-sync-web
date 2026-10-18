@@ -51,6 +51,13 @@ bunx prisma migrate resolve --applied 0_init
 bunx prisma migrate deploy
 ```
 
+## Vercel
+
+The `vercel-build` script runs `prisma migrate deploy` before `next build`, so the tables are created on
+every deploy. Set `DATABASE_URL` and `AUTH_SECRET` for the **Production and Preview** environments (the
+build needs them too); add `DIRECT_URL` if your host gives a separate non-pooled URL. Set
+`SEED_DATABASE=true` for one deploy to create the demo login, then remove it.
+
 ## Docker
 
 ```bash
