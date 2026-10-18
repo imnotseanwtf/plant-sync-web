@@ -181,7 +181,7 @@ bun run prepare      # Install Husky hooks
 
 ## Environment Configuration
 
-Copy `env.example.txt` to `.env.local` and configure:
+Copy `.env.example` to `.env.local` and configure:
 
 ## Code Style Guidelines
 

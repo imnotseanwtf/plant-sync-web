@@ -30,9 +30,10 @@ Set `DEVICE_API_KEY` to require an `X-Device-Key` header on both. Leave it empty
 
 ```bash
 bun install                      # also runs `prisma generate`
-cp env.example.txt .env          # fill in DATABASE_URL and AUTH_SECRET (openssl rand -base64 48)
-bunx prisma migrate deploy       # apply migrations
-bun run user:create "Your Name" you@example.com 'a-strong-password'
+cp .env.example .env              # fill in DATABASE_URL and AUTH_SECRET (openssl rand -base64 48)
+bunx prisma migrate deploy       # create the tables
+bun run db:seed                  # demo login (admin@example.com / password123), plants and readings
+# or just your own login: bun run user:create "Your Name" you@example.com 'a-strong-password'
 bun run dev                      # http://localhost:3000
 ```
 
@@ -57,7 +58,7 @@ export AUTH_SECRET="$(openssl rand -base64 48)"
 docker compose up -d --build
 ```
 
-`plant-sync-web.migrate` applies migrations and exits, then the app starts on `${APP_PORT:-8000}`. The
+The app container also runs `prisma migrate deploy` on every start (so a fresh database gets its tables), and seeds when `SEED_DATABASE=true`. `plant-sync-web.migrate` applies migrations first and exits, then the app starts on `${APP_PORT:-8000}`. The
 ESP32 firmware calls `http://<host>/api/...`; either publish the app on port 80 (`APP_PORT=80`) or change
 `apiUrl` in `esp32/esp32.cpp`.
 

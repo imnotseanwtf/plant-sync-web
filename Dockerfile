@@ -54,6 +54,16 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# The entrypoint applies migrations (and optionally seeds) on start, so it needs the Prisma CLI,
+# the schema and bun for the TypeScript seeder.
+RUN npm install -g bun
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/generated ./generated
+COPY --from=builder --chown=node:node /app/prisma ./prisma
+COPY --from=builder --chown=node:node /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder --chown=node:node /app/tsconfig.json ./tsconfig.json
+COPY --from=builder --chown=node:node /app/src/lib ./src/lib
+COPY --from=builder --chown=node:node /app/scripts/start.sh ./scripts/start.sh
 COPY --from=builder --chown=node:node /app/public ./public
 
 # Create .next dir with correct permissions for prerender cache
@@ -66,4 +76,4 @@ USER node
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["sh", "scripts/start.sh"]

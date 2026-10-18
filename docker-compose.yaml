@@ -26,6 +26,10 @@ services:
             DATABASE_URL: postgresql://${DB_USERNAME:-plant_sync_web}:${DB_PASSWORD:-secret}@plant-sync-web.database:5432/${DB_DATABASE:-plant_sync_web}?schema=public
             # Required: openssl rand -base64 48
             AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET (openssl rand -base64 48)}
+            # Run the idempotent seeder (demo login + plants) after migrations
+            SEED_DATABASE: ${SEED_DATABASE:-}
+            SEED_USER_EMAIL: ${SEED_USER_EMAIL:-}
+            SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-}
             # Optional: when set, ESP32 requests must send an `X-Device-Key` header
             DEVICE_API_KEY: ${DEVICE_API_KEY:-}
             # An https URL marks the session cookie Secure; leave empty for plain HTTP on a LAN
