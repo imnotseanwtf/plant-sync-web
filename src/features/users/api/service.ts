@@ -5,7 +5,7 @@ import { hashPassword } from '@/lib/auth/password';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging } from '@/lib/db-helpers';
 import { Prisma } from '../../../../generated/prisma/client';
-import { ROLES } from '@/lib/auth/rbac';
+import { guardManagers } from '@/lib/auth/managers';
 import { USER_TYPES } from '@/lib/auth/user-type';
 import { prisma } from '@/lib/prisma';
 import type { ListFilters, ListResponse } from '@/types/resource';
@@ -15,26 +15,33 @@ import type { AppUser, UserMutationPayload } from './types';
 // Every export here is a public HTTP endpoint (server action), so each one authenticates.
 // `password` is never selected, so hashes cannot leak to the client.
 
-const select = { id: true, name: true, email: true, role: true, userType: true } as const;
-const toUser = (u: {
-  id: bigint;
-  name: string;
-  email: string;
-  role: AppUser['role'];
-  userType: AppUser['userType'];
-}): AppUser => ({
-  ...u,
-  id: Number(u.id)
+const select = {
+  id: true,
+  name: true,
+  email: true,
+  userType: true,
+  roles: { select: { role: { select: { id: true, name: true } } }, orderBy: { roleId: 'asc' } }
+} satisfies Prisma.UserSelect;
+
+const toUser = (u: Prisma.UserGetPayload<{ select: typeof select }>): AppUser => ({
+  id: Number(u.id),
+  name: u.name,
+  email: u.email,
+  userType: u.userType,
+  roles: u.roles.map((r) => ({ id: Number(r.role.id), name: r.role.name }))
 });
 const EMAIL_TAKEN = 'The email has already been taken.';
-const LAST_ADMIN = 'There must be at least one admin.';
+const BAD_ROLES = 'Pick valid roles.';
 
-/** True when none of the admins would remain after `ids` lose that role (or are deleted). */
-async function leavesNoAdmin(ids: bigint[]) {
-  return (await prisma.user.count({ where: { role: 'admin', id: { notIn: ids } } })) === 0;
+/** Role ids from the form as bigints, or null when any is missing from the database. */
+async function resolveRoleIds(ids: string[]): Promise<bigint[] | null> {
+  if (!ids.every((id) => /^\d+$/.test(id))) return null;
+  const unique = [...new Set(ids)].map(BigInt);
+  const found = await prisma.role.count({ where: { id: { in: unique } } });
+  return found === unique.length ? unique : null;
 }
 
-/** Search by name or email; role and user type filters accept only known values. */
+/** Search by name or email; the role filter is a role id, the type filter a known user type. */
 function userWhere(filters: Pick<ListFilters, 'search' | 'filters'>): Prisma.UserWhereInput {
   const { role, userType } = filters.filters ?? {};
   return {
@@ -44,7 +51,7 @@ function userWhere(filters: Pick<ListFilters, 'search' | 'filters'>): Prisma.Use
         { email: { contains: filters.search, mode: 'insensitive' } }
       ]
     }),
-    ...(ROLES.some((r) => r === role) && { role: role as (typeof ROLES)[number] }),
+    ...(role && /^\d+$/.test(role) && { roles: { some: { roleId: BigInt(role) } } }),
     ...(USER_TYPES.some((t) => t === userType) && {
       userType: userType as (typeof USER_TYPES)[number]
     })
@@ -83,10 +90,16 @@ export async function createUser(data: UserMutationPayload): Promise<ActionResul
   await requirePermission('users:manage');
   const parsed = createUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
-  const { passwordConfirmation: _confirm, password, ...rest } = parsed.data;
+  const { passwordConfirmation: _confirm, password, roleIds, ...rest } = parsed.data;
+  const roles = await resolveRoleIds(roleIds);
+  if (!roles) return fail(BAD_ROLES);
   try {
     const user = await prisma.user.create({
-      data: { ...rest, password: await hashPassword(password) },
+      data: {
+        ...rest,
+        password: await hashPassword(password),
+        roles: { create: roles.map((roleId) => ({ roleId })) }
+      },
       select
     });
     return ok(toUser(user));
@@ -102,24 +115,31 @@ export async function updateUser(
   await requirePermission('users:manage');
   const parsed = updateUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
-  const { passwordConfirmation: _confirm, password, ...rest } = parsed.data;
-  if (rest.role !== 'admin' && (await leavesNoAdmin([BigInt(id)]))) return fail(LAST_ADMIN);
-  try {
-    const user = await prisma.user.update({
-      where: { id: BigInt(id) },
-      data: { ...rest, ...(password && { password: await hashPassword(password) }) },
-      select
-    });
-    return ok(toUser(user));
-  } catch (e) {
-    return dbError(e, { unique: EMAIL_TAKEN, notFound: 'User not found.' });
-  }
+  const { passwordConfirmation: _confirm, password, roleIds, ...rest } = parsed.data;
+  const roles = await resolveRoleIds(roleIds);
+  if (!roles) return fail(BAD_ROLES);
+  const hashed = password ? await hashPassword(password) : undefined;
+  const result = await guardManagers(
+    (tx) =>
+      tx.user.update({
+        where: { id: BigInt(id) },
+        data: {
+          ...rest,
+          ...(hashed && { password: hashed }),
+          roles: { deleteMany: {}, create: roles.map((roleId) => ({ roleId })) }
+        },
+        select
+      }),
+    { unique: EMAIL_TAKEN, notFound: 'User not found.' }
+  );
+  return result.ok ? ok(toUser(result.data)) : result;
 }
 
 export async function deleteUsers(ids: number[]): Promise<ActionResult<number>> {
   const me = await requirePermission('users:manage');
   if (ids.includes(me.id)) return fail("You can't delete your own account.");
-  if (await leavesNoAdmin(ids.map(BigInt))) return fail(LAST_ADMIN);
-  const { count } = await prisma.user.deleteMany({ where: { id: { in: ids.map(BigInt) } } });
-  return ok(count);
+  const result = await guardManagers((tx) =>
+    tx.user.deleteMany({ where: { id: { in: ids.map(BigInt) } } })
+  );
+  return result.ok ? ok(result.data.count) : result;
 }

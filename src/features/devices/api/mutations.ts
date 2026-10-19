@@ -2,7 +2,8 @@ import { mutationOptions } from '@tanstack/react-query';
 import { unwrap } from '@/lib/action-result';
 import { getQueryClient } from '@/lib/query-client';
 import { plantKeys } from '@/features/plants/api/queries';
-import { createDevice, deleteDevices, updateDevice } from './service';
+import type { WiringDesign } from '@/lib/wiring/design';
+import { createDevice, deleteDevices, saveDeviceWiring, updateDevice } from './service';
 import { deviceKeys } from './queries';
 import type { DeviceMutationPayload } from './types';
 
@@ -38,3 +39,11 @@ export async function deleteDevicesAndRefresh(ids: (string | number)[]) {
   await invalidate();
   return result;
 }
+
+export const saveWiringMutation = mutationOptions({
+  mutationFn: async ({ id, design }: { id: string; design: WiringDesign | null }) => {
+    const result = unwrap(await saveDeviceWiring(id, design));
+    await invalidate();
+    return result;
+  }
+});

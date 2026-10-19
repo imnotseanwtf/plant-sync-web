@@ -29,6 +29,15 @@ Prisma 7 and PostgreSQL. Scaffolded from
 
 Set `DEVICE_API_KEY` to require an `X-Device-Key` header on both. Leave it empty to keep the endpoints open.
 
+### Roles and permissions
+
+Access is role-based and managed in the app: **Roles** (sidebar, admins only) is a normal CRUD screen
+where each role gets a set of permissions (`plants:write`, `devices:write`, `users:manage`; the
+catalog is `src/lib/auth/rbac.ts`), and a user can hold several roles on the **Users** form, getting
+the union of their permissions. Everyone can read. Migrations create Admin, Operator and Viewer and
+carry existing users over; nothing can remove the last user who may manage users. Create an admin
+from the command line with `bun run user:create "Name" email password [Role,Role]`.
+
 ### Device wiring
 
 Each plant page shows its device's wiring: the board, the parts wired to it and live health, so a

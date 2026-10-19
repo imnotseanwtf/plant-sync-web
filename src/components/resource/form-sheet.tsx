@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AlertModal } from '@/components/modal/alert-modal';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { LoadingButton } from '@/components/ui/loading-button';
 import {
   Sheet,
@@ -32,7 +31,6 @@ export function FormSheet({
   onDelete,
   onDeleted,
   deleteTitle,
-  fullscreen,
   children
 }: {
   open: boolean;
@@ -47,8 +45,6 @@ export function FormSheet({
   onDelete?: () => Promise<unknown>;
   onDeleted?: () => void;
   deleteTitle?: string;
-  /** Cover the whole screen, for forms that embed a diagram or table. */
-  fullscreen?: boolean;
   children: React.ReactNode;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -68,22 +64,12 @@ export function FormSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        // Same variants as the sheet's own width rules, so these win over them.
-        className={cn(
-          'flex flex-col',
-          fullscreen
-            ? 'data-[side=right]:w-screen data-[side=right]:border-l-0 data-[side=right]:sm:max-w-none'
-            : 'sm:max-w-md'
-        )}
-      >
+      <SheetContent className='flex flex-col sm:max-w-md'>
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
         </SheetHeader>
-        <div className='flex-1 overflow-auto p-4'>
-          <div className={cn(fullscreen && 'mx-auto w-full max-w-6xl')}>{children}</div>
-        </div>
+        <div className='flex-1 overflow-auto p-4'>{children}</div>
         <SheetFooter className='sm:flex-col'>
           <LoadingButton loading={pending} type='submit' form={formId}>
             {mode === 'create' ? 'Create' : 'Save changes'}

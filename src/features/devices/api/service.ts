@@ -78,29 +78,12 @@ export async function getDeviceOptions(): Promise<DeviceOption[]> {
   return devices.map((d) => ({ value: d.id, label: d.name }));
 }
 
-/** The wiring design from a form payload, or the first thing wrong with it. */
-function checkWiring(data: unknown): { design: WiringDesign } | { error: string } {
-  const parsed = wiringSchema.safeParse(data);
-  if (!parsed.success) return { error: 'The wiring design is not valid.' };
-  const errors = designErrors(parsed.data);
-  return errors.length ? { error: errors[0] } : { design: parsed.data };
-}
-
 export async function createDevice(data: DeviceMutationPayload): Promise<ActionResult<Device>> {
   await requirePermission('devices:write');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
-  const wiring = checkWiring(data.wiring);
-  if ('error' in wiring) return fail(wiring.error);
   try {
-    return ok(
-      toDevice(
-        await prisma.deviceIdentifier.create({
-          data: { name: parsed.data.name, wiring: wiring.design as Prisma.InputJsonValue },
-          select
-        })
-      )
-    );
+    return ok(toDevice(await prisma.deviceIdentifier.create({ data: parsed.data, select })));
   } catch (e) {
     return dbError(e, { unique: NAME_TAKEN });
   }
@@ -113,17 +96,9 @@ export async function updateDevice(
   await requirePermission('devices:write');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
-  const wiring = checkWiring(data.wiring);
-  if ('error' in wiring) return fail(wiring.error);
   try {
     return ok(
-      toDevice(
-        await prisma.deviceIdentifier.update({
-          where: { id },
-          data: { name: parsed.data.name, wiring: wiring.design as Prisma.InputJsonValue },
-          select
-        })
-      )
+      toDevice(await prisma.deviceIdentifier.update({ where: { id }, data: parsed.data, select }))
     );
   } catch (e) {
     return dbError(e, { unique: NAME_TAKEN, notFound: 'Device not found.' });
@@ -135,4 +110,32 @@ export async function deleteDevices(ids: string[]): Promise<ActionResult<number>
   await requirePermission('devices:write');
   const { count } = await prisma.deviceIdentifier.deleteMany({ where: { id: { in: ids } } });
   return ok(count);
+}
+
+/** Saves the board and sensor wiring for a device; `null` goes back to the default layout. */
+export async function saveDeviceWiring(
+  id: string,
+  data: WiringDesign | null
+): Promise<ActionResult<WiringDesign | null>> {
+  await requirePermission('devices:write');
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return fail('Device not found.');
+
+  let design: WiringDesign | null = null;
+  if (data !== null) {
+    const parsed = wiringSchema.safeParse(data);
+    if (!parsed.success) return fail('The wiring design is not valid.');
+    const errors = designErrors(parsed.data);
+    if (errors.length) return fail(errors[0]);
+    design = parsed.data;
+  }
+  try {
+    await prisma.deviceIdentifier.update({
+      where: { id },
+      data: { wiring: design ?? Prisma.DbNull },
+      select: { id: true }
+    });
+    return ok(design);
+  } catch (e) {
+    return dbError(e, { notFound: 'Device not found.' });
+  }
 }

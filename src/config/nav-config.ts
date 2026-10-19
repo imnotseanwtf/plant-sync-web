@@ -1,8 +1,9 @@
 import { NavGroup } from '@/types';
 
 /**
- * Navigation, mirroring the Filament panel: Dashboard and Users on top, then a
- * "Plant Management" group. Used for both the sidebar and the Cmd+K bar.
+ * Navigation: Dashboard on top, then "User Management" (Users and Roles, for people who may manage
+ * users; the group hides itself for everyone else) and "Plant Management". Used for both the
+ * sidebar and the Cmd+K bar.
  */
 export const navGroups: NavGroup[] = [
   {
@@ -15,7 +16,12 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         shortcut: ['d', 'd'],
         items: []
-      },
+      }
+    ]
+  },
+  {
+    label: 'User Management',
+    items: [
       {
         title: 'Users',
         url: '/dashboard/users',
@@ -23,6 +29,15 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         access: { permission: 'users:manage' },
         shortcut: ['u', 'u'],
+        items: []
+      },
+      {
+        title: 'Roles',
+        url: '/dashboard/roles',
+        icon: 'shield',
+        isActive: false,
+        access: { permission: 'users:manage' },
+        shortcut: ['r', 'r'],
         items: []
       }
     ]
