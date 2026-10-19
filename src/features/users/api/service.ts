@@ -12,12 +12,13 @@ import type { AppUser, UserMutationPayload } from './types';
 // Every export here is a public HTTP endpoint (server action), so each one authenticates.
 // `password` is never selected, so hashes cannot leak to the client.
 
-const select = { id: true, name: true, email: true, role: true } as const;
+const select = { id: true, name: true, email: true, role: true, userType: true } as const;
 const toUser = (u: {
   id: bigint;
   name: string;
   email: string;
   role: AppUser['role'];
+  userType: AppUser['userType'];
 }): AppUser => ({
   ...u,
   id: Number(u.id)

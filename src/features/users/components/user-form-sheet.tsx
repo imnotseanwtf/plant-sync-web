@@ -8,6 +8,7 @@ import { FormSheet } from '@/components/resource/form-sheet';
 import { Button } from '@/components/ui/button';
 import { FieldGroup } from '@/components/ui/field';
 import { ROLES, ROLE_LABELS } from '@/lib/auth/rbac';
+import { USER_TYPES, USER_TYPE_LABELS } from '@/lib/auth/user-type';
 import { useAppForm } from '@/lib/form';
 import { createUserMutation, deleteUsersAndRefresh, updateUserMutation } from '../api/mutations';
 import type { AppUser } from '../api/types';
@@ -31,6 +32,7 @@ export function UserFormSheet({
     name: user?.name ?? '',
     email: user?.email ?? '',
     role: user?.role ?? 'viewer',
+    userType: user?.userType ?? 'farmer',
     password: '',
     passwordConfirmation: ''
   };
@@ -61,7 +63,7 @@ export function UserFormSheet({
   useEffect(() => {
     if (open) form.reset(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, user?.name, user?.email, user?.role]);
+  }, [open, user?.name, user?.email, user?.role, user?.userType]);
 
   return (
     <FormSheet
@@ -105,6 +107,17 @@ export function UserFormSheet({
                 type='email'
                 placeholder='jane@example.com'
                 autoComplete='off'
+              />
+            )}
+          />
+          <form.AppField
+            name='userType'
+            children={(field) => (
+              <field.SelectField
+                label='User type'
+                required
+                options={USER_TYPES.map((t) => ({ value: t, label: USER_TYPE_LABELS[t] }))}
+                description='What kind of user this is. It does not change what they are allowed to do; the role does.'
               />
             )}
           />

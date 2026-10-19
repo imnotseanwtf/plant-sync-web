@@ -58,6 +58,14 @@ enum Role {
   @@map("user_role")
 }
 
+enum UserType {
+  farmer
+  admin
+  maintenance
+
+  @@map("user_type_enum")
+}
+
 model User {
   id              BigInt    @id @default(autoincrement())
   name            String    @db.VarChar(255)
@@ -65,6 +73,7 @@ model User {
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamp(0)
   password        String    @db.VarChar(255)
   role            Role      @default(viewer)
+  userType        UserType  @default(farmer) @map("user_type")
   rememberToken   String?   @map("remember_token") @db.VarChar(100)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)

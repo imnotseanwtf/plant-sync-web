@@ -20,7 +20,7 @@ const hashed = await hashPassword(password);
 const user = await prisma.user.upsert({
   where: { email },
   update: { name, role, password: hashed },
-  create: { name, email, role, password: hashed },
+  create: { name, email, role, userType: 'admin', password: hashed },
   select: { id: true, email: true, role: true }
 });
 console.log(`User ${user.email} (id ${user.id}, ${user.role}) is ready.`);

@@ -3,10 +3,17 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import type { UserType } from './user-type';
 import { can, type Permission, type Role } from './rbac';
 import { SESSION_COOKIE, verifySessionToken } from './session';
 
-export type CurrentUser = { id: number; name: string; email: string; role: Role };
+export type CurrentUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  userType: UserType;
+};
 
 /** The signed-in user, re-read from the database so deleted users lose access immediately. */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
@@ -23,7 +30,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
   const user = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, name: true, email: true, role: true }
+    select: { id: true, name: true, email: true, role: true, userType: true }
   });
   return user ? { ...user, id: Number(user.id) } : null;
 });
