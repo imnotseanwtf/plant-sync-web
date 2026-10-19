@@ -4,6 +4,7 @@ import {
   IconAlertTriangle,
   IconArrowRight,
   IconBell,
+  IconShieldLock,
   IconTemperature,
   IconBold,
   IconBox,
@@ -142,6 +143,7 @@ export const Icons = {
   employee: IconUserX,
   userPen: IconUserEdit,
   teams: IconUsers,
+  shield: IconShieldLock,
 
   // Brand
   github: IconBrandGithub,

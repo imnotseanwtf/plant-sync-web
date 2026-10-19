@@ -5,7 +5,7 @@ import { hashPassword } from '@/lib/auth/password';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging } from '@/lib/db-helpers';
 import { Prisma } from '../../../../generated/prisma/client';
-import { ROLES } from '@/lib/auth/rbac';
+import { ROLES, type Role } from '@/lib/auth/rbac';
 import { USER_TYPES } from '@/lib/auth/user-type';
 import { prisma } from '@/lib/prisma';
 import type { ListFilters, ListResponse } from '@/types/resource';
@@ -113,6 +113,20 @@ export async function updateUser(
     return ok(toUser(user));
   } catch (e) {
     return dbError(e, { unique: EMAIL_TAKEN, notFound: 'User not found.' });
+  }
+}
+
+/** Change only the role (the roles screen); the last admin can't be demoted. */
+export async function updateUserRole(id: number, role: Role): Promise<ActionResult<AppUser>> {
+  await requirePermission('users:manage');
+  if (!ROLES.includes(role)) return fail('Pick a valid role.');
+  if (role !== 'admin' && (await leavesNoAdmin([BigInt(id)]))) return fail(LAST_ADMIN);
+  try {
+    return ok(
+      toUser(await prisma.user.update({ where: { id: BigInt(id) }, data: { role }, select }))
+    );
+  } catch (e) {
+    return dbError(e, { notFound: 'User not found.' });
   }
 }
 

@@ -24,6 +24,15 @@ export const navGroups: NavGroup[] = [
         access: { permission: 'users:manage' },
         shortcut: ['u', 'u'],
         items: []
+      },
+      {
+        title: 'Roles & Permissions',
+        url: '/dashboard/roles',
+        icon: 'shield',
+        isActive: false,
+        access: { permission: 'users:manage' },
+        shortcut: ['r', 'r'],
+        items: []
       }
     ]
   },
