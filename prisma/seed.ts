@@ -2,6 +2,7 @@
  * Idempotent seeder: a login user plus demo devices, plants and sensor readings.
  *   bun run db:seed
  * Login comes from SEED_USER_NAME / SEED_USER_EMAIL / SEED_USER_PASSWORD (see .env.example).
+ * The login is an admin; SEED_DEMO_USERS=true also adds an operator and a viewer.
  */
 import 'dotenv/config';
 import { hashPassword } from '../src/lib/auth/password';
@@ -30,6 +31,16 @@ const demo = [
   }
 ];
 
+const demoUsers = [
+  {
+    name: 'Demo Operator',
+    email: 'operator@example.com',
+    role: 'operator',
+    userType: 'maintenance'
+  },
+  { name: 'Demo Viewer', email: 'viewer@example.com', role: 'viewer', userType: 'farmer' }
+] as const;
+
 async function main() {
   const name = process.env.SEED_USER_NAME || 'Admin';
   const email = (process.env.SEED_USER_EMAIL || 'admin@example.com').trim().toLowerCase();
@@ -37,7 +48,7 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email },
-    update: { role: 'admin', userType: 'admin' },
+    update: {},
     create: {
       name,
       email,
@@ -47,6 +58,20 @@ async function main() {
     }
   });
   console.log(`User ${email} ready`);
+
+  // One demo account per role/type combination, to try access control. Opt-in because the seeder
+  // runs on every deploy and these share a known password.
+  if (process.env.SEED_DEMO_USERS === 'true') {
+    const demoPassword = await hashPassword(process.env.SEED_DEMO_PASSWORD || 'password');
+    for (const u of demoUsers) {
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: {},
+        create: { ...u, password: demoPassword }
+      });
+      console.log(`Demo user ${u.email} (${u.role}, ${u.userType}) ready`);
+    }
+  }
 
   for (const d of demo) {
     const device = await prisma.deviceIdentifier.upsert({
