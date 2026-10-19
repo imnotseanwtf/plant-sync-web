@@ -1,13 +1,9 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
-import { toast } from 'sonner';
 import { Icons } from '@/components/icons';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { LoadingButton } from '@/components/ui/loading-button';
 import {
   Select,
   SelectContent,
@@ -16,15 +12,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle
-} from '@/components/ui/sheet';
-import { saveWiringMutation } from '@/features/devices/api/mutations';
 import type { DeviceHealth } from '@/lib/sensor-health';
 import { boardById, boardPins, BOARDS } from '@/lib/wiring/boards';
 import {
@@ -82,17 +69,15 @@ function PinSelect({
   );
 }
 
-export function WiringEditorForm({
-  deviceId,
-  initial,
-  onClose
+/** Controlled designer for a device's wiring: live preview, board, parts and their pins. */
+export function WiringDesigner({
+  design: draft,
+  onChange
 }: {
-  deviceId: string;
-  initial: WiringDesign;
-  onClose: () => void;
+  design: WiringDesign;
+  onChange: (design: WiringDesign) => void;
 }) {
-  const [draft, setDraft] = useState(initial);
-  const save = useMutation(saveWiringMutation);
+  const setDraft = (update: (d: WiringDesign) => WiringDesign) => onChange(update(draft));
   const board = boardById(draft.board);
   const errors = designErrors(draft);
   const missing = SENSOR_TYPES.filter((t) => !draft.sensors.some((s) => s.type === t));
@@ -148,193 +133,135 @@ export function WiringEditorForm({
   );
 
   return (
-    <>
-      <div className='flex-1 space-y-6 overflow-auto p-4'>
-        <div className='bg-card overflow-x-auto rounded-xl border p-3'>
-          <WiringDiagram
-            design={draft}
-            health={previewHealth(draft)}
-            values={SAMPLE_VALUES}
-            summary='Preview of the wiring being edited.'
-          />
-        </div>
-
-        <Field>
-          <FieldLabel htmlFor='wiring-board'>Board</FieldLabel>
-          <Select
-            items={BOARDS.map((b) => ({ value: b.id, label: b.name }))}
-            value={draft.board}
-            onValueChange={(id) => id && setDraft((d) => retargetBoard(d, id))}
-          >
-            <SelectTrigger id='wiring-board' className='w-full'>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {BOARDS.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {b.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <FieldDescription>
-            Changing the board re-picks every sensor's pins for the new board.
-          </FieldDescription>
-        </Field>
-
-        <div className='grid gap-4 md:grid-cols-2'>
-          {draft.sensors.map((s) => {
-            const def = SENSORS[s.type];
-            return (
-              <div key={s.type} className='space-y-3 rounded-xl border p-4'>
-                <div className='flex items-start justify-between gap-2'>
-                  <div>
-                    <p className='text-sm font-medium'>{def.name}</p>
-                    <p className='text-muted-foreground text-xs'>{def.model}</p>
-                  </div>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='sm'
-                    aria-label={`Remove ${def.name}`}
-                    onClick={() =>
-                      setDraft((d) => ({
-                        ...d,
-                        sensors: d.sensors.filter((x) => x.type !== s.type)
-                      }))
-                    }
-                  >
-                    <Icons.trash className='size-4' />
-                  </Button>
-                </div>
-                {def.pins.map((p) => (
-                  <Field key={p.name}>
-                    <FieldLabel>{p.name}</FieldLabel>
-                    <PinSelect
-                      label={`${def.title} ${p.name} pin`}
-                      value={s.pins[p.name] ?? ''}
-                      options={options(s.type, p.kind)}
-                      onChange={(id) => setPin(s.type, p.name, id)}
-                    />
-                  </Field>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-
-        {missing.length > 0 && (
-          <div className='flex flex-wrap items-center gap-2'>
-            <span className='text-muted-foreground text-sm'>Add a part:</span>
-            {missing.map((t) => (
-              <Button
-                key={t}
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={() => setDraft((d) => addSensor(d, t))}
-              >
-                <Icons.add className='mr-1 size-4' />
-                {SENSORS[t].title}
-              </Button>
-            ))}
-          </div>
-        )}
-
-        {errors.length > 0 && (
-          <Alert variant='destructive'>
-            <Icons.warning />
-            <AlertTitle>Fix these before saving</AlertTitle>
-            <AlertDescription>
-              <ul className='list-disc pl-4'>
-                {errors.map((e) => (
-                  <li key={e}>{e}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-        {errors.length === 0 && warnings.length > 0 && (
-          <Alert>
-            <Icons.warning />
-            <AlertTitle>Heads up</AlertTitle>
-            <AlertDescription>
-              <ul className='list-disc pl-4'>
-                {warnings.map((w) => (
-                  <li key={w}>{w}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className='space-y-6'>
+      <div className='bg-card overflow-x-auto rounded-xl border p-3'>
+        <WiringDiagram
+          design={draft}
+          health={previewHealth(draft)}
+          values={SAMPLE_VALUES}
+          summary='Preview of the wiring being edited.'
+        />
       </div>
 
-      <SheetFooter className='sm:flex-row sm:justify-between'>
-        <Button type='button' variant='ghost' onClick={() => setDraft(defaultDesign(draft.board))}>
-          Reset to default wiring
-        </Button>
-        <div className='flex gap-2'>
-          <Button type='button' variant='outline' onClick={onClose}>
-            Cancel
-          </Button>
-          <LoadingButton
-            type='button'
-            loading={save.isPending}
-            disabled={errors.length > 0}
-            onClick={() =>
-              save.mutate(
-                { id: deviceId, design: draft },
-                {
-                  onSuccess: () => {
-                    toast.success('Wiring saved');
-                    onClose();
-                  },
-                  onError: (e) => toast.error(e.message)
-                }
-              )
-            }
-          >
-            Save wiring
-          </LoadingButton>
-        </div>
-      </SheetFooter>
-    </>
-  );
-}
+      <Field>
+        <FieldLabel htmlFor='wiring-board'>Board</FieldLabel>
+        <Select
+          items={BOARDS.map((b) => ({ value: b.id, label: b.name }))}
+          value={draft.board}
+          onValueChange={(id) => id && setDraft((d) => retargetBoard(d, id))}
+        >
+          <SelectTrigger id='wiring-board' className='w-full'>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {BOARDS.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <FieldDescription>
+          Changing the board re-picks every sensor's pins for the new board.
+        </FieldDescription>
+      </Field>
 
-/** Side panel where a device's board and sensors are designed. */
-export function WiringEditorSheet({
-  deviceId,
-  design,
-  open,
-  onOpenChange
-}: {
-  deviceId: string;
-  design: WiringDesign;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className='flex w-full flex-col sm:max-w-4xl'>
-        <SheetHeader>
-          <SheetTitle>Design device wiring</SheetTitle>
-          <SheetDescription>
-            Choose the board and the parts wired to it, then assign each part's pins. The diagram
-            and the sensor health checks follow this design.
-          </SheetDescription>
-        </SheetHeader>
-        {/* Remounted on every open so the draft always starts from the saved design. */}
-        {open && (
-          <WiringEditorForm
-            deviceId={deviceId}
-            initial={design}
-            onClose={() => onOpenChange(false)}
-          />
-        )}
-      </SheetContent>
-    </Sheet>
+      <div className='grid gap-4 md:grid-cols-2'>
+        {draft.sensors.map((s) => {
+          const def = SENSORS[s.type];
+          return (
+            <div key={s.type} className='space-y-3 rounded-xl border p-4'>
+              <div className='flex items-start justify-between gap-2'>
+                <div>
+                  <p className='text-sm font-medium'>{def.name}</p>
+                  <p className='text-muted-foreground text-xs'>{def.model}</p>
+                </div>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  aria-label={`Remove ${def.name}`}
+                  onClick={() =>
+                    setDraft((d) => ({
+                      ...d,
+                      sensors: d.sensors.filter((x) => x.type !== s.type)
+                    }))
+                  }
+                >
+                  <Icons.trash className='size-4' />
+                </Button>
+              </div>
+              {def.pins.map((p) => (
+                <Field key={p.name}>
+                  <FieldLabel>{p.name}</FieldLabel>
+                  <PinSelect
+                    label={`${def.title} ${p.name} pin`}
+                    value={s.pins[p.name] ?? ''}
+                    options={options(s.type, p.kind)}
+                    onChange={(id) => setPin(s.type, p.name, id)}
+                  />
+                </Field>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {missing.length > 0 && (
+        <div className='flex flex-wrap items-center gap-2'>
+          <span className='text-muted-foreground text-sm'>Add a part:</span>
+          {missing.map((t) => (
+            <Button
+              key={t}
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() => setDraft((d) => addSensor(d, t))}
+            >
+              <Icons.add className='mr-1 size-4' />
+              {SENSORS[t].title}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      <Button
+        type='button'
+        variant='ghost'
+        size='sm'
+        onClick={() => setDraft((d) => defaultDesign(d.board))}
+      >
+        Reset to default wiring
+      </Button>
+
+      {errors.length > 0 && (
+        <Alert variant='destructive'>
+          <Icons.warning />
+          <AlertTitle>Fix these before saving the device</AlertTitle>
+          <AlertDescription>
+            <ul className='list-disc pl-4'>
+              {errors.map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+      {errors.length === 0 && warnings.length > 0 && (
+        <Alert>
+          <Icons.warning />
+          <AlertTitle>Heads up</AlertTitle>
+          <AlertDescription>
+            <ul className='list-disc pl-4'>
+              {warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
   );
 }
