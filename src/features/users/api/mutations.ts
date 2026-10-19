@@ -1,9 +1,8 @@
 import { mutationOptions } from '@tanstack/react-query';
 import { unwrap } from '@/lib/action-result';
 import { getQueryClient } from '@/lib/query-client';
-import { createUser, deleteUsers, updateUser, updateUserRole } from './service';
+import { createUser, deleteUsers, updateUser } from './service';
 import { userKeys } from './queries';
-import type { Role } from '@/lib/auth/rbac';
 import type { UserMutationPayload } from './types';
 
 // Invalidation lives in mutationFn (not onSuccess) because components spread these options and
@@ -28,12 +27,6 @@ export const updateUserMutation = mutationOptions({
 
 export async function deleteUsersAndRefresh(ids: (string | number)[]) {
   const result = unwrap(await deleteUsers(ids.map(Number)));
-  await invalidate();
-  return result;
-}
-
-export async function setUserRoleAndRefresh(id: number, role: Role) {
-  const result = unwrap(await updateUserRole(id, role));
   await invalidate();
   return result;
 }

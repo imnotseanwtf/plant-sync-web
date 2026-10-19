@@ -1,5 +1,4 @@
 import * as z from 'zod';
-import { ROLES } from '@/lib/auth/rbac';
 import { USER_TYPES } from '@/lib/auth/user-type';
 
 const base = {
@@ -9,7 +8,7 @@ const base = {
     .trim()
     .toLowerCase()
     .pipe(z.email('The email field must be a valid email address.')),
-  role: z.enum(ROLES, 'The role field is required.'),
+  roleIds: z.array(z.string()).min(1, 'Pick at least one role.'),
   userType: z.enum(USER_TYPES, 'The user type field is required.')
 };
 

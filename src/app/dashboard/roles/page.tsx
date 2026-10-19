@@ -1,20 +1,23 @@
+import type { SearchParams } from 'nuqs/server';
 import PageContainer from '@/components/layout/page-container';
-import { getRoleOverview } from '@/features/roles/api/service';
-import { RolesOverview } from '@/features/roles/components/roles-overview';
+import RoleListing from '@/features/roles/components/role-listing';
+import { RoleFormSheetTrigger } from '@/features/roles/components/role-form-sheet';
 import { requirePagePermission } from '@/lib/auth/current-user';
+import { searchParamsCache } from '@/lib/searchparams';
 
-export const metadata = { title: 'Roles & Permissions' };
+export const metadata = { title: 'Roles' };
 
-export default async function RolesPage() {
+export default async function RolesPage(props: { searchParams: Promise<SearchParams> }) {
   await requirePagePermission('users:manage');
-  const users = await getRoleOverview();
+  searchParamsCache.parse(await props.searchParams);
 
   return (
     <PageContainer
-      pageTitle='Roles & Permissions'
-      pageDescription='What each role can do, and who has which role.'
+      pageTitle='Roles'
+      pageDescription='Create roles and choose what each one is allowed to do. Give them to users on the Users page.'
+      pageHeaderAction={<RoleFormSheetTrigger />}
     >
-      <RolesOverview users={users} />
+      <RoleListing />
     </PageContainer>
   );
 }

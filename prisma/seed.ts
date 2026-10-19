@@ -2,10 +2,11 @@
  * Idempotent seeder: a login user plus demo devices, plants and sensor readings.
  *   bun run db:seed
  * Login comes from SEED_USER_NAME / SEED_USER_EMAIL / SEED_USER_PASSWORD (see .env.example).
- * The login is an admin; an operator and a viewer demo user are added too (SEED_DEMO_USERS=false skips them).
+ * The login is an Admin; an Operator and a Viewer demo user are added too (SEED_DEMO_USERS=false skips them).
  */
 import 'dotenv/config';
 import { hashPassword } from '../src/lib/auth/password';
+import { DEFAULT_ROLES } from '../src/lib/auth/rbac';
 import { prisma } from '../src/lib/prisma';
 
 const demo = [
@@ -35,13 +36,26 @@ const demoUsers = [
   {
     name: 'Demo Operator',
     email: 'operator@example.com',
-    role: 'operator',
+    roles: ['Operator'],
     userType: 'maintenance'
   },
-  { name: 'Demo Viewer', email: 'viewer@example.com', role: 'viewer', userType: 'farmer' }
+  { name: 'Demo Viewer', email: 'viewer@example.com', roles: ['Viewer'], userType: 'farmer' }
 ] as const;
 
+const connectRoles = (names: readonly string[]) => ({
+  create: names.map((name) => ({ role: { connect: { name } } }))
+});
+
 async function main() {
+  // The built-in roles (the migration creates them too); edits made in the app are never overwritten.
+  for (const r of DEFAULT_ROLES) {
+    await prisma.role.upsert({
+      where: { name: r.name },
+      update: {},
+      create: { name: r.name, description: r.description, permissions: [...r.permissions] }
+    });
+  }
+
   const name = process.env.SEED_USER_NAME || 'Admin';
   const email = (process.env.SEED_USER_EMAIL || 'admin@example.com').trim().toLowerCase();
   const password = process.env.SEED_USER_PASSWORD || 'password';
@@ -52,8 +66,8 @@ async function main() {
     create: {
       name,
       email,
-      role: 'admin',
       userType: 'admin',
+      roles: connectRoles(['Admin']),
       password: await hashPassword(password)
     }
   });
@@ -67,9 +81,15 @@ async function main() {
       await prisma.user.upsert({
         where: { email: u.email },
         update: {},
-        create: { ...u, password: demoPassword }
+        create: {
+          name: u.name,
+          email: u.email,
+          userType: u.userType,
+          roles: connectRoles(u.roles),
+          password: demoPassword
+        }
       });
-      console.log(`Demo user ${u.email} (${u.role}, ${u.userType}) ready`);
+      console.log(`Demo user ${u.email} (${u.roles.join(', ')}; ${u.userType}) ready`);
     }
   }
 

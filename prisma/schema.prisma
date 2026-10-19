@@ -53,14 +53,6 @@ model SensorValue {
   @@map("sensor_values")
 }
 
-enum Role {
-  admin
-  operator
-  viewer
-
-  @@map("user_role")
-}
-
 enum UserType {
   farmer
   admin
@@ -75,11 +67,36 @@ model User {
   email           String    @unique @db.VarChar(255)
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamp(0)
   password        String    @db.VarChar(255)
-  role            Role      @default(viewer)
   userType        UserType  @default(farmer) @map("user_type")
   rememberToken   String?   @map("remember_token") @db.VarChar(100)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  roles           UserRole[]
 
   @@map("users")
+}
+
+/// A named set of permissions (see src/lib/auth/rbac.ts for the permission catalog).
+model Role {
+  id          BigInt     @id @default(autoincrement())
+  name        String     @unique @db.VarChar(255)
+  description String?    @db.VarChar(500)
+  permissions String[]   @default([])
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+/// A user can hold several roles; their permissions are the union of the roles' permissions.
+model UserRole {
+  userId BigInt @map("user_id")
+  roleId BigInt @map("role_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
 }

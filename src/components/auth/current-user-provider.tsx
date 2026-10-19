@@ -1,16 +1,22 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import { can, type Permission, type Role } from '@/lib/auth/rbac';
+import { can, type Permission } from '@/lib/auth/rbac';
 
-const RoleContext = createContext<Role | undefined>(undefined);
+const PermissionsContext = createContext<readonly Permission[] | undefined>(undefined);
 
-export function CurrentRoleProvider({ role, children }: { role: Role; children: React.ReactNode }) {
-  return <RoleContext.Provider value={role}>{children}</RoleContext.Provider>;
+export function CurrentPermissionsProvider({
+  permissions,
+  children
+}: {
+  permissions: readonly Permission[];
+  children: React.ReactNode;
+}) {
+  return <PermissionsContext.Provider value={permissions}>{children}</PermissionsContext.Provider>;
 }
 
 /** UI-only gate; the server re-checks every permission in `requirePermission`. */
 export function useCan() {
-  const role = useContext(RoleContext);
-  return (permission?: Permission) => can(role, permission);
+  const permissions = useContext(PermissionsContext);
+  return (permission?: Permission) => can(permissions, permission);
 }

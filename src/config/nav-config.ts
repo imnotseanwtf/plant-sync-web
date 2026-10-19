@@ -26,7 +26,7 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
-        title: 'Roles & Permissions',
+        title: 'Roles',
         url: '/dashboard/roles',
         icon: 'shield',
         isActive: false,

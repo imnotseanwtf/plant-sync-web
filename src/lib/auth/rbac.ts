@@ -1,19 +1,5 @@
 // Shared by server and client code, so it must stay free of server-only imports.
-
-export const ROLES = ['admin', 'operator', 'viewer'] as const;
-export type Role = (typeof ROLES)[number];
-
-export const ROLE_LABELS: Record<Role, string> = {
-  admin: 'Admin',
-  operator: 'Operator',
-  viewer: 'Viewer'
-};
-
-export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  admin: 'Full access, including users, roles and this screen.',
-  operator: 'Runs the plants: manages plants and devices, but not users.',
-  viewer: 'Read-only: sees the dashboard, plants and devices.'
-};
+// Roles live in the database; this is the catalog of permissions a role can be given.
 
 /** Every signed-in user can read; these cover the writes. */
 export const PERMISSIONS = ['plants:write', 'devices:write', 'users:manage'] as const;
@@ -25,15 +11,37 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'users:manage': 'Manage users and roles'
 };
 
-const GRANTS: Record<Role, readonly Permission[]> = {
-  admin: ['plants:write', 'devices:write', 'users:manage'],
-  operator: ['plants:write', 'devices:write'],
-  viewer: []
-};
+export const isPermission = (value: string): value is Permission =>
+  (PERMISSIONS as readonly string[]).includes(value);
 
-export function can(role: Role | undefined, permission: Permission | undefined) {
+/** Whether a set of permissions (the union over a user's roles) includes `permission`. */
+export function can(
+  permissions: readonly Permission[] | undefined,
+  permission: Permission | undefined
+) {
   if (!permission) return true;
-  return !!role && GRANTS[role].includes(permission);
+  return !!permissions && permissions.includes(permission);
 }
 
-export const permissionsOf = (role: Role) => PERMISSIONS.filter((p) => can(role, p));
+/** The roles every database starts with (also created by the migration and the seeder). */
+export const DEFAULT_ROLES: readonly {
+  name: string;
+  description: string;
+  permissions: readonly Permission[];
+}[] = [
+  {
+    name: 'Admin',
+    description: 'Full access, including users and roles.',
+    permissions: PERMISSIONS
+  },
+  {
+    name: 'Operator',
+    description: 'Runs the plants: manages plants and devices, but not users.',
+    permissions: ['plants:write', 'devices:write']
+  },
+  {
+    name: 'Viewer',
+    description: 'Read-only: sees the dashboard, plants and devices.',
+    permissions: []
+  }
+];

@@ -1,4 +1,4 @@
-import { CurrentRoleProvider } from '@/components/auth/current-user-provider';
+import { CurrentPermissionsProvider } from '@/components/auth/current-user-provider';
 import KBar from '@/components/kbar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import Header from '@/components/layout/header';
@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Expanded by default (like the Filament panel) until the user collapses it.
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false';
   return (
-    <CurrentRoleProvider role={user.role}>
+    <CurrentPermissionsProvider permissions={user.permissions}>
       <KBar>
         <SidebarProvider defaultOpen={defaultOpen}>
           <a
@@ -41,6 +41,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </SidebarInset>
         </SidebarProvider>
       </KBar>
-    </CurrentRoleProvider>
+    </CurrentPermissionsProvider>
   );
 }
