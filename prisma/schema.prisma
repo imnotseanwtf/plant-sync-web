@@ -50,12 +50,21 @@ model SensorValue {
   @@map("sensor_values")
 }
 
+enum Role {
+  admin
+  operator
+  viewer
+
+  @@map("user_role")
+}
+
 model User {
   id              BigInt    @id @default(autoincrement())
   name            String    @db.VarChar(255)
   email           String    @unique @db.VarChar(255)
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamp(0)
   password        String    @db.VarChar(255)
+  role            Role      @default(viewer)
   rememberToken   String?   @map("remember_token") @db.VarChar(100)
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)

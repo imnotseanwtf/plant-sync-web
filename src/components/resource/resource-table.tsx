@@ -1,5 +1,6 @@
 'use client';
 
+import { useCan } from '@/components/auth/current-user-provider';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,6 +26,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import type { Permission } from '@/lib/auth/rbac';
 import { cn } from '@/lib/utils';
 import { PER_PAGE_OPTIONS, type ListFilters, type ListResponse } from '@/types/resource';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
@@ -62,6 +64,8 @@ type Props<T> = {
   searchable?: boolean;
   deleteMany: (ids: (string | number)[]) => Promise<unknown>;
   getAllIds: (filters: Pick<ListFilters, 'search'>) => Promise<(string | number)[]>;
+  /** Without it the table is read-only: no selection, bulk delete or editor (edit pages become "View"). */
+  writePermission?: Permission;
 };
 
 export function ResourceTable<T>({
@@ -74,8 +78,10 @@ export function ResourceTable<T>({
   fetchList,
   searchable,
   deleteMany,
-  getAllIds
+  getAllIds,
+  writePermission
 }: Props<T>) {
+  const canWrite = useCan()(writePermission);
   const [params, setParams] = useQueryStates({
     page: parseAsInteger.withDefault(1),
     perPage: parseAsInteger.withDefault(10),
@@ -207,19 +213,23 @@ export function ResourceTable<T>({
       <Table>
         <TableHeader className='bg-muted/40'>
           <TableRow>
-            <TableHead className='w-10 pl-6'>
-              <Checkbox
-                aria-label='Select all on this page'
-                checked={allOnPageSelected}
-                onCheckedChange={(checked) =>
-                  setSelected((prev) => {
-                    const next = new Set(prev);
-                    pageIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
-                    return next;
-                  })
-                }
-              />
-            </TableHead>
+            {canWrite ? (
+              <TableHead className='w-10 pl-6'>
+                <Checkbox
+                  aria-label='Select all on this page'
+                  checked={allOnPageSelected}
+                  onCheckedChange={(checked) =>
+                    setSelected((prev) => {
+                      const next = new Set(prev);
+                      pageIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+                      return next;
+                    })
+                  }
+                />
+              </TableHead>
+            ) : (
+              <TableHead className='w-6 pl-6' />
+            )}
             {columns.map((column) => (
               <TableHead key={column.id} className='text-foreground font-semibold'>
                 {column.sortable ? (
@@ -265,18 +275,20 @@ export function ResourceTable<T>({
                   <TableCell
                     className={cn('pl-6', isSelected && 'border-l-primary border-l-2 pl-[22px]')}
                   >
-                    <Checkbox
-                      aria-label={`Select ${noun.singular}`}
-                      checked={isSelected}
-                      onCheckedChange={(checked) =>
-                        setSelected((prev) => {
-                          const next = new Set(prev);
-                          if (checked) next.add(id);
-                          else next.delete(id);
-                          return next;
-                        })
-                      }
-                    />
+                    {canWrite && (
+                      <Checkbox
+                        aria-label={`Select ${noun.singular}`}
+                        checked={isSelected}
+                        onCheckedChange={(checked) =>
+                          setSelected((prev) => {
+                            const next = new Set(prev);
+                            if (checked) next.add(id);
+                            else next.delete(id);
+                            return next;
+                          })
+                        }
+                      />
+                    )}
                   </TableCell>
                   {columns.map((column) => (
                     <TableCell key={column.id}>{column.cell(row)}</TableCell>
@@ -287,10 +299,14 @@ export function ResourceTable<T>({
                         href={editHref(row)}
                         className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
                       >
-                        <Icons.edit className='size-4' />
-                        Edit
+                        {canWrite ? (
+                          <Icons.edit className='size-4' />
+                        ) : (
+                          <Icons.eye className='size-4' />
+                        )}
+                        {canWrite ? 'Edit' : 'View'}
                       </Link>
-                    ) : (
+                    ) : canWrite ? (
                       <button
                         type='button'
                         onClick={() => setEditing(row)}
@@ -299,7 +315,7 @@ export function ResourceTable<T>({
                         <Icons.edit className='size-4' />
                         Edit
                       </button>
-                    )}
+                    ) : null}
                   </TableCell>
                 </TableRow>
               );

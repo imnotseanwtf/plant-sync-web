@@ -1,6 +1,6 @@
 'use server';
 
-import { requireUser } from '@/lib/auth/current-user';
+import { requirePermission } from '@/lib/auth/current-user';
 import { hashPassword } from '@/lib/auth/password';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging } from '@/lib/db-helpers';
@@ -12,15 +12,26 @@ import type { AppUser, UserMutationPayload } from './types';
 // Every export here is a public HTTP endpoint (server action), so each one authenticates.
 // `password` is never selected, so hashes cannot leak to the client.
 
-const select = { id: true, name: true, email: true } as const;
-const toUser = (u: { id: bigint; name: string; email: string }): AppUser => ({
+const select = { id: true, name: true, email: true, role: true } as const;
+const toUser = (u: {
+  id: bigint;
+  name: string;
+  email: string;
+  role: AppUser['role'];
+}): AppUser => ({
   ...u,
   id: Number(u.id)
 });
 const EMAIL_TAKEN = 'The email has already been taken.';
+const LAST_ADMIN = 'There must be at least one admin.';
+
+/** True when none of the admins would remain after `ids` lose that role (or are deleted). */
+async function leavesNoAdmin(ids: bigint[]) {
+  return (await prisma.user.count({ where: { role: 'admin', id: { notIn: ids } } })) === 0;
+}
 
 export async function getUsers(filters: ListFilters): Promise<ListResponse<AppUser>> {
-  await requireUser();
+  await requirePermission('users:manage');
   const [rows, total] = await Promise.all([
     prisma.user.findMany({
       select,
@@ -33,19 +44,19 @@ export async function getUsers(filters: ListFilters): Promise<ListResponse<AppUs
 }
 
 export async function getUser(id: number): Promise<AppUser | null> {
-  await requireUser();
+  await requirePermission('users:manage');
   const user = await prisma.user.findUnique({ where: { id: BigInt(id) }, select });
   return user ? toUser(user) : null;
 }
 
 export async function getUserIds(): Promise<number[]> {
-  await requireUser();
+  await requirePermission('users:manage');
   const rows = await prisma.user.findMany({ select: { id: true } });
   return rows.map((r) => Number(r.id));
 }
 
 export async function createUser(data: UserMutationPayload): Promise<ActionResult<AppUser>> {
-  await requireUser();
+  await requirePermission('users:manage');
   const parsed = createUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { passwordConfirmation: _confirm, password, ...rest } = parsed.data;
@@ -64,10 +75,11 @@ export async function updateUser(
   id: number,
   data: UserMutationPayload
 ): Promise<ActionResult<AppUser>> {
-  await requireUser();
+  await requirePermission('users:manage');
   const parsed = updateUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { passwordConfirmation: _confirm, password, ...rest } = parsed.data;
+  if (rest.role !== 'admin' && (await leavesNoAdmin([BigInt(id)]))) return fail(LAST_ADMIN);
   try {
     const user = await prisma.user.update({
       where: { id: BigInt(id) },
@@ -81,8 +93,9 @@ export async function updateUser(
 }
 
 export async function deleteUsers(ids: number[]): Promise<ActionResult<number>> {
-  const me = await requireUser();
+  const me = await requirePermission('users:manage');
   if (ids.includes(me.id)) return fail("You can't delete your own account.");
+  if (await leavesNoAdmin(ids.map(BigInt))) return fail(LAST_ADMIN);
   const { count } = await prisma.user.deleteMany({ where: { id: { in: ids.map(BigInt) } } });
   return ok(count);
 }

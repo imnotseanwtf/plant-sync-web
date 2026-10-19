@@ -8,8 +8,26 @@ import { hashPassword } from '../src/lib/auth/password';
 import { prisma } from '../src/lib/prisma';
 
 const demo = [
-  { device: 'esp32-basil-01', name: 'Basil', min: 30, max: 60, humidity: 55, temperature: 24, light: 600, moisture: 52 },
-  { device: 'esp32-mint-02', name: 'Mint', min: 40, max: 70, humidity: 60, temperature: 22, light: 450, moisture: 28 }
+  {
+    device: 'esp32-basil-01',
+    name: 'Basil',
+    min: 30,
+    max: 60,
+    humidity: 55,
+    temperature: 24,
+    light: 600,
+    moisture: 52
+  },
+  {
+    device: 'esp32-mint-02',
+    name: 'Mint',
+    min: 40,
+    max: 70,
+    humidity: 60,
+    temperature: 22,
+    light: 450,
+    moisture: 28
+  }
 ];
 
 async function main() {
@@ -19,8 +37,8 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email },
-    update: {},
-    create: { name, email, password: await hashPassword(password) }
+    update: { role: 'admin' },
+    create: { name, email, role: 'admin', password: await hashPassword(password) }
   });
   console.log(`User ${email} ready`);
 

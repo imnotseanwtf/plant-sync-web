@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useCan } from '@/components/auth/current-user-provider';
 import { Icons } from '@/components/icons';
 import { FormSheet } from '@/components/resource/form-sheet';
 import { Button } from '@/components/ui/button';
@@ -133,7 +134,9 @@ export function PlantFormSheet({
 }
 
 export function PlantFormSheetTrigger() {
+  const canWrite = useCan()('plants:write');
   const [open, setOpen] = useState(false);
+  if (!canWrite) return null;
   return (
     <>
       <Button onClick={() => setOpen(true)}>

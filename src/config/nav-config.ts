@@ -21,6 +21,7 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/users',
         icon: 'teams',
         isActive: false,
+        access: { permission: 'users:manage' },
         shortcut: ['u', 'u'],
         items: []
       }

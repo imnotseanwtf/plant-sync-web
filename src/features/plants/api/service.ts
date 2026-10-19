@@ -1,7 +1,7 @@
 'use server';
 
 import type { Prisma } from '../../../../generated/prisma/client';
-import { requireUser } from '@/lib/auth/current-user';
+import { requirePermission, requireUser } from '@/lib/auth/current-user';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging, sortBy } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
@@ -86,7 +86,7 @@ export async function getPlantIds(filters: Pick<ListFilters, 'search'>): Promise
 }
 
 export async function createPlant(data: PlantMutationPayload): Promise<ActionResult<Plant>> {
-  await requireUser();
+  await requirePermission('plants:write');
   const parsed = plantSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -103,7 +103,7 @@ export async function updatePlant(
   id: number,
   data: PlantMutationPayload
 ): Promise<ActionResult<Plant>> {
-  await requireUser();
+  await requirePermission('plants:write');
   const parsed = plantSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { deviceIdentifierId: _ignored, ...values } = parsed.data;
@@ -120,7 +120,7 @@ export async function updatePlant(
 }
 
 export async function deletePlants(ids: number[]): Promise<ActionResult<number>> {
-  await requireUser();
+  await requirePermission('plants:write');
   const { count } = await prisma.plant.deleteMany({ where: { id: { in: ids.map(BigInt) } } });
   return ok(count);
 }

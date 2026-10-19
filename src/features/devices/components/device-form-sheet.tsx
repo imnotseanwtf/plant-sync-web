@@ -3,6 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useCan } from '@/components/auth/current-user-provider';
 import { Icons } from '@/components/icons';
 import { FormSheet } from '@/components/resource/form-sheet';
 import { Button } from '@/components/ui/button';
@@ -108,7 +109,9 @@ export function DeviceFormSheet({
 }
 
 export function DeviceFormSheetTrigger() {
+  const canWrite = useCan()('devices:write');
   const [open, setOpen] = useState(false);
+  if (!canWrite) return null;
   return (
     <>
       <Button onClick={() => setOpen(true)}>

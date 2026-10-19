@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { ROLES } from '@/lib/auth/rbac';
 
 const base = {
   name: z.string().trim().min(1, 'The name field is required.').max(255),
@@ -6,7 +7,8 @@ const base = {
     .string()
     .trim()
     .toLowerCase()
-    .pipe(z.email('The email field must be a valid email address.'))
+    .pipe(z.email('The email field must be a valid email address.')),
+  role: z.enum(ROLES, 'The role field is required.')
 };
 
 const mismatch = {

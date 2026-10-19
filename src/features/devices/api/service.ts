@@ -1,6 +1,6 @@
 'use server';
 
-import { requireUser } from '@/lib/auth/current-user';
+import { requirePermission, requireUser } from '@/lib/auth/current-user';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging, sortBy } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
@@ -53,7 +53,7 @@ export async function getDeviceOptions(): Promise<DeviceOption[]> {
 }
 
 export async function createDevice(data: DeviceMutationPayload): Promise<ActionResult<Device>> {
-  await requireUser();
+  await requirePermission('devices:write');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -67,7 +67,7 @@ export async function updateDevice(
   id: string,
   data: DeviceMutationPayload
 ): Promise<ActionResult<Device>> {
-  await requireUser();
+  await requirePermission('devices:write');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -79,7 +79,7 @@ export async function updateDevice(
 
 /** Deleting a device also deletes its plant and all of its readings (ON DELETE CASCADE). */
 export async function deleteDevices(ids: string[]): Promise<ActionResult<number>> {
-  await requireUser();
+  await requirePermission('devices:write');
   const { count } = await prisma.deviceIdentifier.deleteMany({ where: { id: { in: ids } } });
   return ok(count);
 }

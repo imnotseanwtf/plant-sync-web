@@ -7,6 +7,7 @@ import { Icons } from '@/components/icons';
 import { FormSheet } from '@/components/resource/form-sheet';
 import { Button } from '@/components/ui/button';
 import { FieldGroup } from '@/components/ui/field';
+import { ROLES, ROLE_LABELS } from '@/lib/auth/rbac';
 import { useAppForm } from '@/lib/form';
 import { createUserMutation, deleteUsersAndRefresh, updateUserMutation } from '../api/mutations';
 import type { AppUser } from '../api/types';
@@ -29,6 +30,7 @@ export function UserFormSheet({
   const initial: UserFormValues = {
     name: user?.name ?? '',
     email: user?.email ?? '',
+    role: user?.role ?? 'viewer',
     password: '',
     passwordConfirmation: ''
   };
@@ -59,7 +61,7 @@ export function UserFormSheet({
   useEffect(() => {
     if (open) form.reset(initial);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, user?.name, user?.email]);
+  }, [open, user?.name, user?.email, user?.role]);
 
   return (
     <FormSheet
@@ -103,6 +105,17 @@ export function UserFormSheet({
                 type='email'
                 placeholder='jane@example.com'
                 autoComplete='off'
+              />
+            )}
+          />
+          <form.AppField
+            name='role'
+            children={(field) => (
+              <field.SelectField
+                label='Role'
+                required
+                options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+                description='Admins manage everything, operators manage plants and devices, viewers are read-only.'
               />
             )}
           />
