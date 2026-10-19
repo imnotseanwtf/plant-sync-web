@@ -2,7 +2,6 @@
 
 import { Icons } from '@/components/icons';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { deriveHealth, type PartState } from '@/lib/sensor-health';
@@ -86,6 +85,13 @@ const STATE_LABEL: Record<PartState, string> = {
   offline: 'Device offline'
 };
 
+const DOT: Record<PartState, string> = {
+  ok: 'bg-emerald-500',
+  fault: 'bg-red-500',
+  waiting: 'bg-muted-foreground/50',
+  offline: 'bg-muted-foreground/50'
+};
+
 const LED: Record<PartState, string> = {
   ok: 'fill-emerald-500',
   fault: 'fill-red-500',
@@ -116,9 +122,11 @@ function Box({
         height={h}
         rx={8}
         className={cn(
-          'fill-background stroke-[1.5]',
-          state === 'fault' ? 'animate-pulse stroke-red-500 stroke-2' : 'stroke-border',
-          state === 'ok' && 'stroke-emerald-500/60'
+          'stroke-[1.5] drop-shadow-sm',
+          state === 'fault' &&
+            'animate-pulse fill-red-50 stroke-red-500 stroke-2 dark:fill-red-950/50',
+          state === 'ok' && 'fill-emerald-50 stroke-emerald-500/60 dark:fill-emerald-950/40',
+          (state === 'waiting' || state === 'offline') && 'fill-card stroke-border'
         )}
       />
       <circle
@@ -138,16 +146,24 @@ function Pin({ x, y }: { x: number; y: number }) {
 /** Red call-out under or beside a part whose sensor returned nothing. */
 function FaultTag({ x, y }: { x: number; y: number }) {
   return (
-    <g>
-      <rect x={x} y={y} width={150} height={38} rx={6} className='fill-red-500/10 stroke-red-500' />
+    <g className='drop-shadow-sm'>
+      <rect x={x} y={y} width={176} height={42} rx={8} className='fill-card stroke-red-500/50' />
+      <rect x={x} y={y} width={5} height={42} rx={2.5} className='fill-red-500' />
+      <path
+        d={`M${x + 22} ${y + 11} l9 16 h-18 z`}
+        className='fill-red-500'
+        strokeLinejoin='round'
+      />
+      <rect x={x + 21} y={y + 16} width={2} height={6} className='fill-card' />
+      <rect x={x + 21} y={y + 24} width={2} height={2} className='fill-card' />
       <text
-        x={x + 10}
-        y={y + 16}
+        x={x + 42}
+        y={y + 19}
         className='fill-red-600 dark:fill-red-400 font-sans text-[12px] font-semibold'
       >
-        ⚠ Needs check / repair
+        Needs check / repair
       </text>
-      <text x={x + 10} y={y + 30} className='fill-muted-foreground font-sans text-[10.5px]'>
+      <text x={x + 42} y={y + 33} className='fill-muted-foreground font-sans text-[10.5px]'>
         No response from sensor
       </text>
     </g>
@@ -224,6 +240,42 @@ export function WiringCard({
     }
   ];
 
+  const online = health.board === 'online';
+  const tiles = [
+    {
+      name: 'Soil moisture',
+      icon: Icons.droplet,
+      state: health.soil,
+      value: parts[0].value,
+      status: STATE_LABEL[health.soil]
+    },
+    {
+      name: 'Light (BH1750)',
+      icon: Icons.sun,
+      state: health.light,
+      value: parts[1].value,
+      status: STATE_LABEL[health.light]
+    },
+    {
+      name: 'Temp & humidity (DHT22)',
+      icon: Icons.temperature,
+      state: health.dht,
+      value: parts[2].value,
+      status: STATE_LABEL[health.dht]
+    },
+    {
+      name: 'Irrigation pump',
+      icon: Icons.plant,
+      state: (online ? (health.irrigating ? 'ok' : 'waiting') : boardState) as PartState,
+      value: online ? (health.irrigating ? 'Running' : 'Idle') : '—',
+      status: online
+        ? health.irrigating
+          ? 'Watering now'
+          : 'Standing by'
+        : STATE_LABEL[boardState]
+    }
+  ];
+
   const summary = health.faults.length
     ? `${health.faults.join(', ')} not responding.`
     : health.board === 'online'
@@ -237,18 +289,42 @@ export function WiringCard({
       <CardHeader>
         <CardTitle className='flex flex-wrap items-center gap-2'>
           Device wiring
-          <Badge variant={health.board === 'online' ? 'secondary' : 'outline'}>
-            {health.board === 'online'
-              ? 'Online'
-              : health.board === 'offline'
-                ? 'Offline'
-                : 'Waiting for data'}
-          </Badge>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+              health.faults.length > 0
+                ? 'border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400'
+                : health.board === 'online'
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                  : 'text-muted-foreground'
+            )}
+          >
+            <span
+              className={cn(
+                'size-2 rounded-full',
+                health.faults.length > 0
+                  ? 'bg-red-500'
+                  : health.board === 'online'
+                    ? 'animate-pulse bg-emerald-500'
+                    : 'bg-muted-foreground/50'
+              )}
+            />
+            {health.faults.length > 0
+              ? 'Needs attention'
+              : health.board === 'online'
+                ? 'All sensors responding'
+                : health.board === 'offline'
+                  ? 'Offline'
+                  : 'Waiting for data'}
+          </span>
         </CardTitle>
-        <CardDescription>
-          {deviceName}
-          {lastSeen && ` · last reading ${lastSeen}`}. Flowing wires carry live data; a red sensor
-          returned nothing.
+        <CardDescription className='flex flex-wrap items-center gap-x-3'>
+          <span className='font-mono'>{deviceName}</span>
+          {lastSeen && (
+            <span className='inline-flex items-center gap-1'>
+              <Icons.clock className='size-3.5' /> last reading {lastSeen}
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className='flex flex-col gap-4'>
@@ -268,13 +344,56 @@ export function WiringCard({
           </Alert>
         )}
 
+        <ul className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+          {tiles.map((t) => (
+            <li
+              key={t.name}
+              className={cn(
+                'flex items-center gap-3 rounded-xl border p-3.5',
+                t.state === 'fault' && 'border-red-500/40 bg-red-500/5'
+              )}
+            >
+              <span
+                className={cn(
+                  'flex size-10 shrink-0 items-center justify-center rounded-full',
+                  t.state === 'ok' && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                  t.state === 'fault' && 'bg-red-500/10 text-red-600 dark:text-red-400',
+                  (t.state === 'waiting' || t.state === 'offline') &&
+                    'bg-muted text-muted-foreground'
+                )}
+              >
+                <t.icon className='size-5' />
+              </span>
+              <div className='min-w-0'>
+                <p className='text-muted-foreground truncate text-xs'>{t.name}</p>
+                <p className='text-lg leading-tight font-semibold tabular-nums'>{t.value}</p>
+                <p
+                  className={cn(
+                    'flex items-center gap-1.5 text-xs font-medium',
+                    t.state === 'fault' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
+                  )}
+                >
+                  <span className={cn('size-1.5 rounded-full', DOT[t.state])} />
+                  {t.status}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+
         <div className='overflow-x-auto'>
           <svg
-            viewBox='0 0 1120 640'
+            viewBox='20 84 1100 556'
             role='img'
             aria-labelledby='wiring-title'
-            className='h-auto w-full min-w-[900px]'
+            className='h-auto w-full min-w-[880px]'
           >
+            <defs>
+              <linearGradient id='pcb' x1='0' y1='0' x2='0' y2='1'>
+                <stop offset='0%' className='[stop-color:#2a5a4d] dark:[stop-color:#215a4f]' />
+                <stop offset='100%' className='[stop-color:#1b3a33] dark:[stop-color:#173f38]' />
+              </linearGradient>
+            </defs>
             <title id='wiring-title'>{`Wiring of soil sensor, BH1750, DHT22 and relay to a NodeMCU. ${summary}`}</title>
 
             <g fill='none' strokeWidth={3} strokeLinecap='round' strokeLinejoin='round'>
@@ -297,7 +416,8 @@ export function WiringCard({
               width={180}
               height={462}
               rx={10}
-              className='fill-[#1f3b36] dark:fill-[#1c4a42]'
+              className='drop-shadow-md'
+              fill='url(#pcb)'
             />
             <rect
               x={436}
@@ -659,7 +779,7 @@ export function WiringCard({
               width={120}
               height={60}
               rx={8}
-              className='fill-background stroke-border stroke-[1.5]'
+              className='fill-card stroke-border drop-shadow-sm stroke-[1.5]'
             />
             <text
               x={1020}
@@ -691,32 +811,18 @@ export function WiringCard({
           </svg>
         </div>
 
-        <ul className='grid gap-2 sm:grid-cols-3'>
-          {parts.map((p) => (
-            <li
-              key={p.key}
-              className='flex items-start justify-between gap-3 rounded-lg border p-3'
-            >
-              <div className='min-w-0'>
-                <p className='text-sm font-medium'>{p.name}</p>
-                <p className='text-muted-foreground font-mono text-xs'>
-                  {p.pins} · {p.value}
-                </p>
-              </div>
-              <Badge
-                variant={
-                  health[p.key] === 'fault'
-                    ? 'destructive'
-                    : health[p.key] === 'ok'
-                      ? 'secondary'
-                      : 'outline'
-                }
-              >
-                {STATE_LABEL[health[p.key]]}
-              </Badge>
-            </li>
-          ))}
-        </ul>
+        <div className='text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-1 text-xs'>
+          <span className='flex items-center gap-1.5'>
+            <span className='size-2 rounded-full bg-emerald-500' /> Responding
+          </span>
+          <span className='flex items-center gap-1.5'>
+            <span className='size-2 rounded-full bg-red-500' /> Needs check / repair
+          </span>
+          <span className='flex items-center gap-1.5'>
+            <span className='bg-muted-foreground/50 size-2 rounded-full' /> Offline or waiting
+          </span>
+          <span>Moving dashes show live data on a wire.</span>
+        </div>
       </CardContent>
     </Card>
   );
