@@ -639,3 +639,21 @@
     -webkit-text-fill-color: currentColor;
   }
 }
+
+/* Marching dashes along a wire to show data flowing (device wiring diagram). */
+@keyframes wire-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.wire-flow {
+  stroke-dasharray: 6 6;
+  animation: wire-flow 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wire-flow {
+    animation: none;
+  }
+}

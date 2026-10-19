@@ -1,3 +1,4 @@
+import { CurrentRoleProvider } from '@/components/auth/current-user-provider';
 import KBar from '@/components/kbar';
 import AppSidebar from '@/components/layout/app-sidebar';
 import Header from '@/components/layout/header';
@@ -24,20 +25,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Expanded by default (like the Filament panel) until the user collapses it.
   const defaultOpen = cookieStore.get('sidebar_state')?.value !== 'false';
   return (
-    <KBar>
-      <SidebarProvider defaultOpen={defaultOpen}>
-        <a
-          href='#main-content'
-          className='bg-background ring-ring sr-only rounded-md px-3 py-2 text-sm font-medium shadow focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-50 focus:ring-2'
-        >
-          Skip to content
-        </a>
-        <AppSidebar user={user} />
-        <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
-          <Header />
-          <InfobarProvider defaultOpen={false}>{children}</InfobarProvider>
-        </SidebarInset>
-      </SidebarProvider>
-    </KBar>
+    <CurrentRoleProvider role={user.role}>
+      <KBar>
+        <SidebarProvider defaultOpen={defaultOpen}>
+          <a
+            href='#main-content'
+            className='bg-background ring-ring sr-only rounded-md px-3 py-2 text-sm font-medium shadow focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-50 focus:ring-2'
+          >
+            Skip to content
+          </a>
+          <AppSidebar user={user} />
+          <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
+            <Header />
+            <InfobarProvider defaultOpen={false}>{children}</InfobarProvider>
+          </SidebarInset>
+        </SidebarProvider>
+      </KBar>
+    </CurrentRoleProvider>
   );
 }

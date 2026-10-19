@@ -2,15 +2,44 @@
  * Idempotent seeder: a login user plus demo devices, plants and sensor readings.
  *   bun run db:seed
  * Login comes from SEED_USER_NAME / SEED_USER_EMAIL / SEED_USER_PASSWORD (see .env.example).
+ * The login is an admin; an operator and a viewer demo user are added too (SEED_DEMO_USERS=false skips them).
  */
 import 'dotenv/config';
 import { hashPassword } from '../src/lib/auth/password';
 import { prisma } from '../src/lib/prisma';
 
 const demo = [
-  { device: 'esp32-basil-01', name: 'Basil', min: 30, max: 60, humidity: 55, temperature: 24, light: 600, moisture: 52 },
-  { device: 'esp32-mint-02', name: 'Mint', min: 40, max: 70, humidity: 60, temperature: 22, light: 450, moisture: 28 }
+  {
+    device: 'esp32-basil-01',
+    name: 'Basil',
+    min: 30,
+    max: 60,
+    humidity: 55,
+    temperature: 24,
+    light: 600,
+    moisture: 52
+  },
+  {
+    device: 'esp32-mint-02',
+    name: 'Mint',
+    min: 40,
+    max: 70,
+    humidity: 60,
+    temperature: 22,
+    light: 450,
+    moisture: 28
+  }
 ];
+
+const demoUsers = [
+  {
+    name: 'Demo Operator',
+    email: 'operator@example.com',
+    role: 'operator',
+    userType: 'maintenance'
+  },
+  { name: 'Demo Viewer', email: 'viewer@example.com', role: 'viewer', userType: 'farmer' }
+] as const;
 
 async function main() {
   const name = process.env.SEED_USER_NAME || 'Admin';
@@ -20,9 +49,29 @@ async function main() {
   await prisma.user.upsert({
     where: { email },
     update: {},
-    create: { name, email, password: await hashPassword(password) }
+    create: {
+      name,
+      email,
+      role: 'admin',
+      userType: 'admin',
+      password: await hashPassword(password)
+    }
   });
   console.log(`User ${email} ready`);
+
+  // Demo operator and viewer accounts to try access control. They share a known password, so set
+  // SEED_DEMO_USERS=false on a real deployment.
+  if (process.env.SEED_DEMO_USERS !== 'false') {
+    const demoPassword = await hashPassword(process.env.SEED_DEMO_PASSWORD || 'password');
+    for (const u of demoUsers) {
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: {},
+        create: { ...u, password: demoPassword }
+      });
+      console.log(`Demo user ${u.email} (${u.role}, ${u.userType}) ready`);
+    }
+  }
 
   for (const d of demo) {
     const device = await prisma.deviceIdentifier.upsert({

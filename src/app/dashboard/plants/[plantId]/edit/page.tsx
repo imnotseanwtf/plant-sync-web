@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import PageContainer from '@/components/layout/page-container';
 import { getPlantOverview } from '@/features/plants/api/service';
+import { DeviceWiring } from '@/features/plants/components/device-wiring';
 import { PlantDeleteButton } from '@/features/plants/components/plant-delete-button';
 import { PlantForm } from '@/features/plants/components/plant-form';
 import { PlantWidgets } from '@/features/plants/components/plant-widgets';
@@ -25,6 +26,7 @@ export default async function EditPlantPage({ params }: { params: Promise<{ plan
     >
       <div className='flex flex-col gap-4'>
         <PlantWidgets plantId={id} initial={overview} />
+        <DeviceWiring plantId={id} initial={overview} />
         <PlantForm plant={overview.plant} />
         <SensorValueTable plantId={id} initial={overview} />
       </div>

@@ -1,7 +1,15 @@
 import { requireUser } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma';
+import { OFFLINE_AFTER_MS } from '@/lib/sensor-health';
+import { parseDesign } from '@/lib/wiring/design';
 
-export type PlantStatus = 'irrigating' | 'needs-water' | 'ok' | 'no-data' | 'offline';
+export type PlantStatus =
+  | 'irrigating'
+  | 'needs-water'
+  | 'ok'
+  | 'no-data'
+  | 'offline'
+  | 'sensor-fault';
 
 export type PlantSummary = {
   id: number;
@@ -22,9 +30,6 @@ export type DashboardSummary = {
   plants: PlantSummary[];
 };
 
-/** A device that hasn't reported for this long is shown as offline (it posts every few seconds). */
-const OFFLINE_AFTER_MS = 10 * 60 * 1000;
-
 /** Server-only loader for the overview page (not a server action, so it isn't a public endpoint). */
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   await requireUser();
@@ -43,6 +48,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         deviceIdentifier: {
           select: {
             name: true,
+            wiring: true,
             sensorValues: {
               orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
               take: 1,
@@ -62,7 +68,12 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     let status: PlantStatus = 'no-data';
     if (latest) {
       if (now - latest.createdAt.getTime() > OFFLINE_AFTER_MS) status = 'offline';
-      else if (latest.isIrrigating) status = 'irrigating';
+      else if (latest.moistureLevel === null) {
+        // No soil sensor in the wiring design means a missing moisture reading is expected.
+        const design = parseDesign(p.deviceIdentifier.wiring);
+        status =
+          !design || design.sensors.some((s) => s.type === 'soil') ? 'sensor-fault' : 'no-data';
+      } else if (latest.isIrrigating) status = 'irrigating';
       else if (latest.moistureLevel <= p.moistureLevelMin) status = 'needs-water';
       else status = 'ok';
     }

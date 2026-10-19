@@ -23,6 +23,7 @@ export function DeviceTable() {
       fetchList={getDevices}
       deleteMany={deleteDevicesAndRefresh}
       getAllIds={() => getDeviceIds()}
+      writePermission='devices:write'
       renderEditor={({ row, open, onOpenChange }) => (
         <DeviceFormSheet device={row ?? undefined} open={open} onOpenChange={onOpenChange} />
       )}

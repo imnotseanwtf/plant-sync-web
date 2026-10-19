@@ -1,10 +1,12 @@
 'use server';
 
-import { requireUser } from '@/lib/auth/current-user';
+import { Prisma } from '../../../../generated/prisma/client';
+import { requirePermission, requireUser } from '@/lib/auth/current-user';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging, sortBy } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
 import type { ListFilters, ListResponse } from '@/types/resource';
+import { designErrors, wiringSchema, type WiringDesign } from '@/lib/wiring/design';
 import { deviceSchema } from '../schemas/device';
 import type { Device, DeviceMutationPayload, DeviceOption } from './types';
 
@@ -53,7 +55,7 @@ export async function getDeviceOptions(): Promise<DeviceOption[]> {
 }
 
 export async function createDevice(data: DeviceMutationPayload): Promise<ActionResult<Device>> {
-  await requireUser();
+  await requirePermission('devices:write');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -67,7 +69,7 @@ export async function updateDevice(
   id: string,
   data: DeviceMutationPayload
 ): Promise<ActionResult<Device>> {
-  await requireUser();
+  await requirePermission('devices:write');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -79,7 +81,35 @@ export async function updateDevice(
 
 /** Deleting a device also deletes its plant and all of its readings (ON DELETE CASCADE). */
 export async function deleteDevices(ids: string[]): Promise<ActionResult<number>> {
-  await requireUser();
+  await requirePermission('devices:write');
   const { count } = await prisma.deviceIdentifier.deleteMany({ where: { id: { in: ids } } });
   return ok(count);
+}
+
+/** Saves the board and sensor wiring for a device; `null` goes back to the default layout. */
+export async function saveDeviceWiring(
+  id: string,
+  data: WiringDesign | null
+): Promise<ActionResult<WiringDesign | null>> {
+  await requirePermission('devices:write');
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return fail('Device not found.');
+
+  let design: WiringDesign | null = null;
+  if (data !== null) {
+    const parsed = wiringSchema.safeParse(data);
+    if (!parsed.success) return fail('The wiring design is not valid.');
+    const errors = designErrors(parsed.data);
+    if (errors.length) return fail(errors[0]);
+    design = parsed.data;
+  }
+  try {
+    await prisma.deviceIdentifier.update({
+      where: { id },
+      data: { wiring: design ?? Prisma.DbNull },
+      select: { id: true }
+    });
+    return ok(design);
+  } catch (e) {
+    return dbError(e, { notFound: 'Device not found.' });
+  }
 }

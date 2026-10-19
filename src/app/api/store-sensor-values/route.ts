@@ -10,10 +10,11 @@ const numeric = z.preprocess(
 
 const storeSensorValueSchema = z.object({
   device_identifier_id: z.uuid(),
-  moisture_level: numeric,
-  humidity: numeric,
-  temperature: numeric,
-  light_intensity: numeric,
+  // null (or omitted) means the sensor was not detected or is defective.
+  moisture_level: numeric.nullish(),
+  humidity: numeric.nullish(),
+  temperature: numeric.nullish(),
+  light_intensity: numeric.nullish(),
   is_irrigating: z.boolean().nullish()
 });
 
@@ -50,10 +51,10 @@ export async function POST(request: Request) {
   const sensorValue = await prisma.sensorValue.create({
     data: {
       deviceIdentifierId: device_identifier_id,
-      moistureLevel: moisture_level,
-      humidity,
-      temperature,
-      lightIntensity: light_intensity,
+      moistureLevel: moisture_level ?? null,
+      humidity: humidity ?? null,
+      temperature: temperature ?? null,
+      lightIntensity: light_intensity ?? null,
       isIrrigating: is_irrigating ?? false
     },
     select: { id: true }

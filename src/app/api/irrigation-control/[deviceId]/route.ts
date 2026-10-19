@@ -34,7 +34,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ devi
   // instead of a 500.
   const plant = device.plant;
   const latest = device.sensorValues[0];
-  const needsWater = !!plant && !!latest && plant.moistureLevelMin >= latest.moistureLevel;
+  // A null moisture means the sensor is missing or defective: never run the pump blind.
+  const needsWater =
+    !!plant && latest?.moistureLevel != null && plant.moistureLevelMin >= latest.moistureLevel;
 
   return NextResponse.json(needsWater);
 }

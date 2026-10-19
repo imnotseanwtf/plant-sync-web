@@ -49,6 +49,7 @@ export function PlantTable() {
       queryKey={plantKeys.list}
       fetchList={getPlants}
       searchable
+      writePermission='plants:write'
       deleteMany={deletePlantsAndRefresh}
       getAllIds={getPlantIds}
     />

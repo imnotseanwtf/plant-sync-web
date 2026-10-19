@@ -21,6 +21,17 @@ type SortKey = keyof Pick<
 
 const round = (n: number) => Math.round(n * 10) / 10;
 
+/** null means the sensor was not detected or is defective. */
+function reading(value: number | null, unit: string) {
+  return value === null ? (
+    <span className='text-destructive' title='Sensor not detected or defective'>
+      No signal
+    </span>
+  ) : (
+    `${round(value)}${unit}`
+  );
+}
+
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** Filament's dateTime format `M j, Y H:i:s`, e.g. `Oct 13, 2026 02:25:50`. */
@@ -31,13 +42,13 @@ function timestamp(iso: string) {
 }
 
 const columns: { key: SortKey; label: string; cell: (r: SensorReading) => React.ReactNode }[] = [
-  { key: 'moistureLevel', label: 'Moisture Level', cell: (r) => `${round(r.moistureLevel)}%` },
-  { key: 'humidity', label: 'Humidity', cell: (r) => `${round(r.humidity)}%` },
-  { key: 'temperature', label: 'Temperature', cell: (r) => `${round(r.temperature)}°C` },
+  { key: 'moistureLevel', label: 'Moisture Level', cell: (r) => reading(r.moistureLevel, '%') },
+  { key: 'humidity', label: 'Humidity', cell: (r) => reading(r.humidity, '%') },
+  { key: 'temperature', label: 'Temperature', cell: (r) => reading(r.temperature, '°C') },
   {
     key: 'lightIntensity',
     label: 'Light Intensity',
-    cell: (r) => `${round(r.lightIntensity)} lux`
+    cell: (r) => reading(r.lightIntensity, ' lux')
   },
   {
     key: 'isIrrigating',
@@ -76,6 +87,8 @@ export function SensorValueTable({
 
   const rows = readings.toSorted((a, b) => {
     const [x, y] = [a[sort.key], b[sort.key]];
+    // Missing readings always sort last.
+    if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
     const cmp = x < y ? -1 : x > y ? 1 : 0;
     return sort.dir === 'asc' ? cmp : -cmp;
   });

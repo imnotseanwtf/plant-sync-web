@@ -66,6 +66,7 @@ void loop() {
   int moisturePercentage = map(moistureValue, 4095, 0, 0, 100);
 
   float lux = lightMeter.readLightLevel();
+  if (lux < 0) lux = NAN;  // BH1750 not detected: NaN is sent as null (sensor fault)
   float temperature = dht.readTemperature();
   float humidity = dht.readHumidity();
 

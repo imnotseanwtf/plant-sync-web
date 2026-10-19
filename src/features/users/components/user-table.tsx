@@ -1,14 +1,19 @@
 'use client';
 
 import { ResourceTable, type ResourceColumn } from '@/components/resource/resource-table';
+import { ROLE_LABELS } from '@/lib/auth/rbac';
+import { USER_TYPE_LABELS } from '@/lib/auth/user-type';
 import { deleteUsersAndRefresh } from '../api/mutations';
 import { userKeys } from '../api/queries';
 import { getUserIds, getUsers } from '../api/service';
 import type { AppUser } from '../api/types';
 import { UserFormSheet } from './user-form-sheet';
 
-// Filament listed just the name.
-const columns: ResourceColumn<AppUser>[] = [{ id: 'name', label: 'Name', cell: (u) => u.name }];
+const columns: ResourceColumn<AppUser>[] = [
+  { id: 'name', label: 'Name', cell: (u) => u.name },
+  { id: 'userType', label: 'User type', cell: (u) => USER_TYPE_LABELS[u.userType] },
+  { id: 'role', label: 'Role', cell: (u) => ROLE_LABELS[u.role] }
+];
 
 export function UserTable() {
   return (

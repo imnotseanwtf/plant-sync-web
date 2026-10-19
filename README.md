@@ -21,10 +21,20 @@ Prisma 7 and PostgreSQL. Scaffolded from
 
 - `POST /api/store-sensor-values` — JSON body `device_identifier_id`, `moisture_level`, `humidity`,
   `temperature`, `light_intensity`, optional `is_irrigating`. Returns `201` with the new reading id.
+  The four sensor values may be `null` (or omitted): that means the sensor was not detected or is
+  defective, and the dashboard shows it as "No signal".
 - `GET /api/irrigation-control/{deviceId}` — returns the bare JSON value `true` when the pump should run
-  (latest moisture <= the plant's minimum), otherwise `false`.
+  (latest moisture <= the plant's minimum), otherwise `false`. If the latest moisture is `null`
+  (sensor fault) it returns `false`, so the pump never runs without a reading.
 
 Set `DEVICE_API_KEY` to require an `X-Device-Key` header on both. Leave it empty to keep the endpoints open.
+
+### Device wiring
+
+Each plant page shows its device's wiring: the board, the parts wired to it and live health, so a
+sensor that returns `null` is flagged "Needs check / repair". Admins and operators can design it with
+**Edit wiring** (pick a board, add the soil sensor, BH1750, DHT22 and relay, assign pins). The design
+is stored per device in `device_identifiers.wiring`; boards and parts are defined in `src/lib/wiring`.
 
 ## Local development
 
