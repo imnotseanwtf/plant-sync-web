@@ -7,6 +7,6 @@ export type Device = {
   wiring: WiringDesign | null;
 };
 
-export type DeviceMutationPayload = { name: string };
+export type DeviceMutationPayload = { name: string; wiring: WiringDesign };
 
 export type DeviceOption = { value: string; label: string };

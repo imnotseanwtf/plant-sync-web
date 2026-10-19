@@ -54,6 +54,13 @@ export async function getRoles(filters: ListFilters): Promise<ListResponse<RoleR
   return { rows: rows.map(toRole), total };
 }
 
+export async function getRole(id: number): Promise<RoleRow | null> {
+  await requirePermission('view:roles');
+  if (!Number.isSafeInteger(id) || id < 1) return null;
+  const role = await prisma.role.findUnique({ where: { id: BigInt(id) }, select });
+  return role ? toRole(role) : null;
+}
+
 export async function getRoleIds(filters: Pick<ListFilters, 'search'>): Promise<number[]> {
   await requirePermission('view:roles');
   const rows = await prisma.role.findMany({ where: roleWhere(filters), select: { id: true } });

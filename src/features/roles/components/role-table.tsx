@@ -7,7 +7,6 @@ import { deleteRolesAndRefresh } from '../api/mutations';
 import { roleKeys } from '../api/queries';
 import { getRoleIds, getRoles } from '../api/service';
 import type { RoleRow } from '../api/types';
-import { RoleFormSheet } from './role-form-sheet';
 
 const columns: ResourceColumn<RoleRow>[] = [
   {
@@ -55,9 +54,7 @@ export function RoleTable() {
       editPermission='edit:roles'
       deletePermission='delete:roles'
       getAllIds={getRoleIds}
-      renderEditor={({ row, open, onOpenChange }) => (
-        <RoleFormSheet role={row ?? undefined} open={open} onOpenChange={onOpenChange} />
-      )}
+      editHref={(r) => `/dashboard/roles/${r.id}/edit`}
     />
   );
 }

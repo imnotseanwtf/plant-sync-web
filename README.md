@@ -46,9 +46,13 @@ remove the last user who may edit roles. Create an admin from the command line w
 ### Device wiring
 
 Each plant page shows its device's wiring: the board, the parts wired to it and live health, so a
-sensor that returns `null` is flagged "Needs check / repair". Admins and operators can design it with
-**Edit wiring** (pick a board, add the soil sensor, BH1750, DHT22 and relay, assign pins). The design
-is stored per device in `device_identifiers.wiring`; boards and parts are defined in `src/lib/wiring`.
+sensor that returns `null` is flagged "Needs check / repair". The wiring is designed on the device
+identifier's own **Create / Edit** page (Device Identifiers → New, or Edit on a row): pick a board, add
+the soil sensor, BH1750, DHT22 and relay, and assign pins. It is saved with the device in
+`device_identifiers.wiring`; boards and parts are defined in `src/lib/wiring`.
+
+Roles, Users and Device Identifiers all create and edit on their own pages
+(`/new` and `/<id>/edit`); users without the matching permission see the edit page read-only.
 
 ## Local development
 

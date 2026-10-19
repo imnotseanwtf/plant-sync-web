@@ -11,7 +11,6 @@ import { deleteUsersAndRefresh } from '../api/mutations';
 import { userKeys } from '../api/queries';
 import { getUserIds, getUsers } from '../api/service';
 import type { AppUser } from '../api/types';
-import { UserFormSheet } from './user-form-sheet';
 
 const columns: ResourceColumn<AppUser>[] = [
   { id: 'name', label: 'Name', cell: (u) => u.name },
@@ -61,9 +60,7 @@ export function UserTable() {
       editPermission='edit:users'
       deletePermission='delete:users'
       getAllIds={getUserIds}
-      renderEditor={({ row, open, onOpenChange }) => (
-        <UserFormSheet user={row ?? undefined} open={open} onOpenChange={onOpenChange} />
-      )}
+      editHref={(u) => `/dashboard/users/${u.id}/edit`}
     />
   );
 }

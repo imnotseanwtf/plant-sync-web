@@ -32,7 +32,7 @@ export function DeviceWiring({ plantId, initial }: { plantId: number; initial: P
       actions={
         canEdit && (
           <Link
-            href={`/dashboard/device-identifiers/${plant.deviceIdentifierId}/wiring`}
+            href={`/dashboard/device-identifiers/${plant.deviceIdentifierId}/edit`}
             className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             Edit wiring

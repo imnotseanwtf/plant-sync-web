@@ -1,7 +1,7 @@
 import type { SearchParams } from 'nuqs/server';
 import PageContainer from '@/components/layout/page-container';
 import UserListing from '@/features/users/components/user-listing';
-import { UserFormSheetTrigger } from '@/features/users/components/user-form-sheet';
+import { CreateLink } from '@/components/resource/create-link';
 import { requirePagePermission } from '@/lib/auth/current-user';
 import { searchParamsCache } from '@/lib/searchparams';
 
@@ -15,7 +15,9 @@ export default async function UsersPage(props: { searchParams: Promise<SearchPar
     <PageContainer
       pageTitle='Users'
       pageDescription='People who can sign in to this dashboard.'
-      pageHeaderAction={<UserFormSheetTrigger />}
+      pageHeaderAction={
+        <CreateLink href='/dashboard/users/new' label='New user' permission='create:users' />
+      }
     >
       <UserListing />
     </PageContainer>
