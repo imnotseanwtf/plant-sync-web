@@ -6,6 +6,7 @@ import { deviceKeys } from '../api/queries';
 import { getDeviceIds, getDevices } from '../api/service';
 import type { Device } from '../api/types';
 import { DeviceFormSheet } from './device-form-sheet';
+import { DeviceWiringAction } from './device-wiring-action';
 
 // Filament listed just `id` and `name`, neither searchable nor sortable.
 const columns: ResourceColumn<Device>[] = [
@@ -24,6 +25,7 @@ export function DeviceTable() {
       deleteMany={deleteDevicesAndRefresh}
       getAllIds={() => getDeviceIds()}
       writePermission='devices:write'
+      rowActions={(device) => <DeviceWiringAction device={device} />}
       renderEditor={({ row, open, onOpenChange }) => (
         <DeviceFormSheet device={row ?? undefined} open={open} onOpenChange={onOpenChange} />
       )}

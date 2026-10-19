@@ -64,6 +64,8 @@ type Props<T> = {
   searchable?: boolean;
   deleteMany: (ids: (string | number)[]) => Promise<unknown>;
   getAllIds: (filters: Pick<ListFilters, 'search'>) => Promise<(string | number)[]>;
+  /** Extra links shown before Edit in each row (they handle their own permissions). */
+  rowActions?: (row: T) => React.ReactNode;
   /** Without it the table is read-only: no selection, bulk delete or editor (edit pages become "View"). */
   writePermission?: Permission;
 };
@@ -79,6 +81,7 @@ export function ResourceTable<T>({
   searchable,
   deleteMany,
   getAllIds,
+  rowActions,
   writePermission
 }: Props<T>) {
   const canWrite = useCan()(writePermission);
@@ -253,7 +256,7 @@ export function ResourceTable<T>({
                 )}
               </TableHead>
             ))}
-            <TableHead className='w-24' />
+            <TableHead className='w-px' />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -294,28 +297,31 @@ export function ResourceTable<T>({
                     <TableCell key={column.id}>{column.cell(row)}</TableCell>
                   ))}
                   <TableCell className='pr-6 text-right'>
-                    {editHref ? (
-                      <Link
-                        href={editHref(row)}
-                        className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
-                      >
-                        {canWrite ? (
+                    <span className='inline-flex items-center gap-4'>
+                      {rowActions?.(row)}
+                      {editHref ? (
+                        <Link
+                          href={editHref(row)}
+                          className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
+                        >
+                          {canWrite ? (
+                            <Icons.edit className='size-4' />
+                          ) : (
+                            <Icons.eye className='size-4' />
+                          )}
+                          {canWrite ? 'Edit' : 'View'}
+                        </Link>
+                      ) : canWrite ? (
+                        <button
+                          type='button'
+                          onClick={() => setEditing(row)}
+                          className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
+                        >
                           <Icons.edit className='size-4' />
-                        ) : (
-                          <Icons.eye className='size-4' />
-                        )}
-                        {canWrite ? 'Edit' : 'View'}
-                      </Link>
-                    ) : canWrite ? (
-                      <button
-                        type='button'
-                        onClick={() => setEditing(row)}
-                        className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
-                      >
-                        <Icons.edit className='size-4' />
-                        Edit
-                      </button>
-                    ) : null}
+                          Edit
+                        </button>
+                      ) : null}
+                    </span>
                   </TableCell>
                 </TableRow>
               );

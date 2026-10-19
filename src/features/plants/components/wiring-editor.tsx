@@ -304,36 +304,37 @@ export function WiringEditorForm({
   );
 }
 
-/** "Edit wiring" button and the side panel where a device's board and sensors are designed. */
-export function WiringEditorButton({
+/** Side panel where a device's board and sensors are designed. */
+export function WiringEditorSheet({
   deviceId,
-  design
+  design,
+  open,
+  onOpenChange
 }: {
   deviceId: string;
   design: WiringDesign;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   return (
-    <>
-      <Button variant='outline' size='sm' onClick={() => setOpen(true)}>
-        <Icons.edit className='mr-1.5 size-4' />
-        Edit wiring
-      </Button>
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent className='flex w-full flex-col sm:max-w-4xl'>
-          <SheetHeader>
-            <SheetTitle>Design device wiring</SheetTitle>
-            <SheetDescription>
-              Choose the board and the parts wired to it, then assign each part's pins. The diagram
-              and the sensor health checks follow this design.
-            </SheetDescription>
-          </SheetHeader>
-          {/* Remounted on every open so the draft always starts from the saved design. */}
-          {open && (
-            <WiringEditorForm deviceId={deviceId} initial={design} onClose={() => setOpen(false)} />
-          )}
-        </SheetContent>
-      </Sheet>
-    </>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className='flex w-full flex-col sm:max-w-4xl'>
+        <SheetHeader>
+          <SheetTitle>Design device wiring</SheetTitle>
+          <SheetDescription>
+            Choose the board and the parts wired to it, then assign each part's pins. The diagram
+            and the sensor health checks follow this design.
+          </SheetDescription>
+        </SheetHeader>
+        {/* Remounted on every open so the draft always starts from the saved design. */}
+        {open && (
+          <WiringEditorForm
+            deviceId={deviceId}
+            initial={design}
+            onClose={() => onOpenChange(false)}
+          />
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }

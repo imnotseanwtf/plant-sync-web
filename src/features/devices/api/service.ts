@@ -6,13 +6,18 @@ import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging, sortBy } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
 import type { ListFilters, ListResponse } from '@/types/resource';
-import { designErrors, wiringSchema, type WiringDesign } from '@/lib/wiring/design';
+import { designErrors, parseDesign, wiringSchema, type WiringDesign } from '@/lib/wiring/design';
 import { deviceSchema } from '../schemas/device';
 import type { Device, DeviceMutationPayload, DeviceOption } from './types';
 
 // Every export here is a public HTTP endpoint (server action), so each one authenticates.
 
-const select = { id: true, name: true } as const;
+const select = { id: true, name: true, wiring: true } as const;
+const toDevice = (d: { id: string; name: string; wiring: Prisma.JsonValue | null }): Device => ({
+  id: d.id,
+  name: d.name,
+  wiring: parseDesign(d.wiring)
+});
 const NAME_TAKEN = 'The name has already been taken.';
 
 export async function getDevices(filters: ListFilters): Promise<ListResponse<Device>> {
@@ -28,13 +33,14 @@ export async function getDevices(filters: ListFilters): Promise<ListResponse<Dev
     }),
     prisma.deviceIdentifier.count()
   ]);
-  return { rows, total };
+  return { rows: rows.map(toDevice), total };
 }
 
 export async function getDevice(id: string): Promise<Device | null> {
   await requireUser();
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  return prisma.deviceIdentifier.findUnique({ where: { id }, select });
+  const device = await prisma.deviceIdentifier.findUnique({ where: { id }, select });
+  return device ? toDevice(device) : null;
 }
 
 export async function getDeviceIds(): Promise<string[]> {
@@ -48,7 +54,7 @@ export async function getDeviceOptions(): Promise<DeviceOption[]> {
   await requireUser();
   const devices = await prisma.deviceIdentifier.findMany({
     where: { plant: null },
-    select,
+    select: { id: true, name: true },
     orderBy: { name: 'asc' }
   });
   return devices.map((d) => ({ value: d.id, label: d.name }));
@@ -59,7 +65,7 @@ export async function createDevice(data: DeviceMutationPayload): Promise<ActionR
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
-    return ok(await prisma.deviceIdentifier.create({ data: parsed.data, select }));
+    return ok(toDevice(await prisma.deviceIdentifier.create({ data: parsed.data, select })));
   } catch (e) {
     return dbError(e, { unique: NAME_TAKEN });
   }
@@ -73,7 +79,9 @@ export async function updateDevice(
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
-    return ok(await prisma.deviceIdentifier.update({ where: { id }, data: parsed.data, select }));
+    return ok(
+      toDevice(await prisma.deviceIdentifier.update({ where: { id }, data: parsed.data, select }))
+    );
   } catch (e) {
     return dbError(e, { unique: NAME_TAKEN, notFound: 'Device not found.' });
   }

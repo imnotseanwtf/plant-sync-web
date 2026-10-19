@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useCan } from '@/components/auth/current-user-provider';
+import { buttonVariants } from '@/components/ui/button';
 import { defaultDesign } from '@/lib/wiring/design';
 import type { PlantOverview } from '../api/types';
 import { usePlantOverview } from './plant-widgets';
 import { WiringCard } from './wiring-card';
-import { WiringEditorButton } from './wiring-editor';
 
 /** Polls the plant overview (shared cache with the widgets) and ticks a clock for staleness. */
 export function DeviceWiring({ plantId, initial }: { plantId: number; initial: PlantOverview }) {
@@ -29,7 +30,14 @@ export function DeviceWiring({ plantId, initial }: { plantId: number; initial: P
       design={design}
       now={now}
       actions={
-        canEdit && <WiringEditorButton deviceId={plant.deviceIdentifierId} design={design} />
+        canEdit && (
+          <Link
+            href='/dashboard/device-identifiers'
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
+            Edit on Device Identifiers
+          </Link>
+        )
       }
     />
   );
