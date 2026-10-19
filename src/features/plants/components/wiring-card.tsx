@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Icons } from '@/components/icons';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardAction,
@@ -19,6 +21,30 @@ import type { PlantOverview } from '../api/types';
 import { WiringDiagram } from './wiring-diagram';
 
 const round = (n: number) => Math.round(n * 10) / 10;
+
+const COLLAPSED_KEY = 'device-wiring-collapsed';
+
+/** Collapsed state, remembered in this browser. Starts open so the first render matches the server. */
+function useCollapsed() {
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(COLLAPSED_KEY) === '1');
+    } catch {
+      // Storage can be blocked; the card just starts open.
+    }
+  }, []);
+  const toggle = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem(COLLAPSED_KEY, c ? '0' : '1');
+      } catch {
+        // Not remembered, still toggles.
+      }
+      return !c;
+    });
+  return [collapsed, toggle] as const;
+}
 
 export const STATE_LABEL: Record<PartState, string> = {
   ok: 'Working',
@@ -132,6 +158,7 @@ export function WiringCard({
   /** Rendered in the header, e.g. the "Edit wiring" button. */
   actions?: React.ReactNode;
 }) {
+  const [collapsed, toggleCollapsed] = useCollapsed();
   const types = design.sensors.map((s) => s.type);
   const health = deriveHealth(latest, now, types);
   const lastSeen = ago(latest, now);
@@ -215,89 +242,106 @@ export function WiringCard({
             </span>
           )}
         </CardDescription>
-        {actions && <CardAction>{actions}</CardAction>}
+        <CardAction className='flex items-center gap-2'>
+          {actions}
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon-sm'
+            aria-expanded={!collapsed}
+            aria-controls='device-wiring-content'
+            aria-label={collapsed ? 'Expand device wiring' : 'Collapse device wiring'}
+            onClick={toggleCollapsed}
+          >
+            <Icons.chevronDown
+              className={cn('size-4 transition-transform', !collapsed && 'rotate-180')}
+            />
+          </Button>
+        </CardAction>
       </CardHeader>
-      <CardContent className='flex flex-col gap-4'>
-        {health.faults.length > 0 && (
-          <Alert variant='destructive'>
-            <Icons.warning />
-            <AlertTitle>
-              {health.faults.length === 1
-                ? 'A sensor needs'
-                : `${health.faults.length} sensors need`}{' '}
-              a check or repair
-            </AlertTitle>
-            <AlertDescription>
-              {health.faults.join(', ')} returned no value in the latest reading. Check its wiring
-              and power, then replace it if it stays red.
-            </AlertDescription>
-          </Alert>
-        )}
+      {!collapsed && (
+        <CardContent id='device-wiring-content' className='flex flex-col gap-4'>
+          {health.faults.length > 0 && (
+            <Alert variant='destructive'>
+              <Icons.warning />
+              <AlertTitle>
+                {health.faults.length === 1
+                  ? 'A sensor needs'
+                  : `${health.faults.length} sensors need`}{' '}
+                a check or repair
+              </AlertTitle>
+              <AlertDescription>
+                {health.faults.join(', ')} returned no value in the latest reading. Check its wiring
+                and power, then replace it if it stays red.
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {tiles.length > 0 && (
-          <ul className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
-            {tiles.map((t) => {
-              const Icon = Icons[TILE_ICON[t.type]];
-              return (
-                <li
-                  key={t.type}
-                  className={cn(
-                    'flex items-center gap-3 rounded-xl border p-3.5',
-                    t.state === 'fault' && 'border-red-500/40 bg-red-500/5'
-                  )}
-                >
-                  <span
+          {tiles.length > 0 && (
+            <ul className='grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+              {tiles.map((t) => {
+                const Icon = Icons[TILE_ICON[t.type]];
+                return (
+                  <li
+                    key={t.type}
                     className={cn(
-                      'flex size-10 shrink-0 items-center justify-center rounded-full',
-                      t.state === 'ok' &&
-                        'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-                      t.state === 'fault' && 'bg-red-500/10 text-red-600 dark:text-red-400',
-                      (t.state === 'waiting' || t.state === 'offline') &&
-                        'bg-muted text-muted-foreground'
+                      'flex items-center gap-3 rounded-xl border p-3.5',
+                      t.state === 'fault' && 'border-red-500/40 bg-red-500/5'
                     )}
                   >
-                    <Icon className='size-5' />
-                  </span>
-                  <div className='min-w-0'>
-                    <p className='text-muted-foreground truncate text-xs'>{TILE_NAME[t.type]}</p>
-                    <p className='text-lg leading-tight font-semibold tabular-nums'>{t.value}</p>
-                    <p
+                    <span
                       className={cn(
-                        'flex items-center gap-1.5 text-xs font-medium',
-                        t.state === 'fault'
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-muted-foreground'
+                        'flex size-10 shrink-0 items-center justify-center rounded-full',
+                        t.state === 'ok' &&
+                          'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+                        t.state === 'fault' && 'bg-red-500/10 text-red-600 dark:text-red-400',
+                        (t.state === 'waiting' || t.state === 'offline') &&
+                          'bg-muted text-muted-foreground'
                       )}
                     >
-                      <span className={cn('size-1.5 rounded-full', DOT[t.state])} />
-                      {t.status}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      <Icon className='size-5' />
+                    </span>
+                    <div className='min-w-0'>
+                      <p className='text-muted-foreground truncate text-xs'>{TILE_NAME[t.type]}</p>
+                      <p className='text-lg leading-tight font-semibold tabular-nums'>{t.value}</p>
+                      <p
+                        className={cn(
+                          'flex items-center gap-1.5 text-xs font-medium',
+                          t.state === 'fault'
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-muted-foreground'
+                        )}
+                      >
+                        <span className={cn('size-1.5 rounded-full', DOT[t.state])} />
+                        {t.status}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
-        <div className='overflow-x-auto'>
-          <WiringDiagram design={design} health={health} values={values} summary={summary} />
-        </div>
+          <div className='overflow-x-auto'>
+            <WiringDiagram design={design} health={health} values={values} summary={summary} />
+          </div>
 
-        <div className='text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-1 text-xs'>
-          <span className='flex items-center gap-1.5'>
-            <span className='size-2 rounded-full bg-emerald-500' /> Responding
-          </span>
-          <span className='flex items-center gap-1.5'>
-            <span className='size-2 rounded-full bg-red-500' /> Needs check / repair
-          </span>
-          <span className='flex items-center gap-1.5'>
-            <span className='bg-muted-foreground/50 size-2 rounded-full' /> Offline or waiting
-          </span>
-          <span>Moving dashes show live data on a wire.</span>
-        </div>
+          <div className='text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-1 text-xs'>
+            <span className='flex items-center gap-1.5'>
+              <span className='size-2 rounded-full bg-emerald-500' /> Responding
+            </span>
+            <span className='flex items-center gap-1.5'>
+              <span className='size-2 rounded-full bg-red-500' /> Needs check / repair
+            </span>
+            <span className='flex items-center gap-1.5'>
+              <span className='bg-muted-foreground/50 size-2 rounded-full' /> Offline or waiting
+            </span>
+            <span>Moving dashes show live data on a wire.</span>
+          </div>
 
-        <PinTable design={design} />
-      </CardContent>
+          <PinTable design={design} />
+        </CardContent>
+      )}
     </Card>
   );
 }

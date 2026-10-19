@@ -4,6 +4,9 @@ import { requirePermission } from '@/lib/auth/current-user';
 import { hashPassword } from '@/lib/auth/password';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging } from '@/lib/db-helpers';
+import { Prisma } from '../../../../generated/prisma/client';
+import { ROLES } from '@/lib/auth/rbac';
+import { USER_TYPES } from '@/lib/auth/user-type';
 import { prisma } from '@/lib/prisma';
 import type { ListFilters, ListResponse } from '@/types/resource';
 import { createUserSchema, updateUserSchema } from '../schemas/user';
@@ -31,15 +34,33 @@ async function leavesNoAdmin(ids: bigint[]) {
   return (await prisma.user.count({ where: { role: 'admin', id: { notIn: ids } } })) === 0;
 }
 
+/** Search by name or email; role and user type filters accept only known values. */
+function userWhere(filters: Pick<ListFilters, 'search' | 'filters'>): Prisma.UserWhereInput {
+  const { role, userType } = filters.filters ?? {};
+  return {
+    ...(filters.search && {
+      OR: [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { email: { contains: filters.search, mode: 'insensitive' } }
+      ]
+    }),
+    ...(ROLES.some((r) => r === role) && { role: role as (typeof ROLES)[number] }),
+    ...(USER_TYPES.some((t) => t === userType) && {
+      userType: userType as (typeof USER_TYPES)[number]
+    })
+  };
+}
+
 export async function getUsers(filters: ListFilters): Promise<ListResponse<AppUser>> {
   await requirePermission('users:manage');
   const [rows, total] = await Promise.all([
     prisma.user.findMany({
+      where: userWhere(filters),
       select,
       orderBy: { createdAt: 'desc' },
       ...paging(filters.page, filters.limit)
     }),
-    prisma.user.count()
+    prisma.user.count({ where: userWhere(filters) })
   ]);
   return { rows: rows.map(toUser), total };
 }
@@ -50,9 +71,11 @@ export async function getUser(id: number): Promise<AppUser | null> {
   return user ? toUser(user) : null;
 }
 
-export async function getUserIds(): Promise<number[]> {
+export async function getUserIds(
+  filters: Pick<ListFilters, 'search' | 'filters'>
+): Promise<number[]> {
   await requirePermission('users:manage');
-  const rows = await prisma.user.findMany({ select: { id: true } });
+  const rows = await prisma.user.findMany({ where: userWhere(filters), select: { id: true } });
   return rows.map((r) => Number(r.id));
 }
 

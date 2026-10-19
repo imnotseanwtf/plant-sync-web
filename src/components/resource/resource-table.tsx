@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue
@@ -28,11 +29,16 @@ import {
 } from '@/components/ui/table';
 import type { Permission } from '@/lib/auth/rbac';
 import { cn } from '@/lib/utils';
-import { PER_PAGE_OPTIONS, type ListFilters, type ListResponse } from '@/types/resource';
+import {
+  PER_PAGE_OPTIONS,
+  type FilterDef,
+  type ListFilters,
+  type ListResponse
+} from '@/types/resource';
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { AlertModal } from '@/components/modal/alert-modal';
 
@@ -60,10 +66,14 @@ type Props<T> = {
   /** Must match the key used by the server-side prefetch so the hydrated data is reused. */
   queryKey: (filters: ListFilters) => readonly unknown[];
   fetchList: (filters: ListFilters) => Promise<ListResponse<T>>;
-  /** Only present when the Filament table had searchable columns. */
+  /** Search box above the table; on unless a table opts out. */
   searchable?: boolean;
+  /** Dropdown filters above the table (state lives in the URL as `f_<id>`). */
+  filterDefs?: FilterDef[];
   deleteMany: (ids: (string | number)[]) => Promise<unknown>;
-  getAllIds: (filters: Pick<ListFilters, 'search'>) => Promise<(string | number)[]>;
+  getAllIds: (filters: Pick<ListFilters, 'search' | 'filters'>) => Promise<(string | number)[]>;
+  /** Extra links shown before Edit in each row (they handle their own permissions). */
+  rowActions?: (row: T) => React.ReactNode;
   /** Without it the table is read-only: no selection, bulk delete or editor (edit pages become "View"). */
   writePermission?: Permission;
 };
@@ -76,25 +86,42 @@ export function ResourceTable<T>({
   renderEditor,
   queryKey,
   fetchList,
-  searchable,
+  searchable = true,
+  filterDefs = [],
   deleteMany,
   getAllIds,
+  rowActions,
   writePermission
 }: Props<T>) {
   const canWrite = useCan()(writePermission);
-  const [params, setParams] = useQueryStates({
-    page: parseAsInteger.withDefault(1),
-    perPage: parseAsInteger.withDefault(10),
-    search: parseAsString.withDefault(''),
-    sort: parseAsString,
-    dir: parseAsString
-  });
+  const parsers = useMemo(
+    () => ({
+      page: parseAsInteger.withDefault(1),
+      perPage: parseAsInteger.withDefault(10),
+      search: parseAsString.withDefault(''),
+      sort: parseAsString,
+      dir: parseAsString,
+      ...Object.fromEntries(filterDefs.map((f) => [`f_${f.id}`, parseAsString]))
+    }),
+    [filterDefs]
+  );
+  const [params, setParams] = useQueryStates(parsers);
+
+  const activeFilters = Object.fromEntries(
+    filterDefs.flatMap((f) => {
+      const value = (params as Record<string, unknown>)[`f_${f.id}`];
+      return typeof value === 'string' && f.options.some((o) => o.value === value)
+        ? [[f.id, value]]
+        : [];
+    })
+  );
 
   const filters: ListFilters = {
     page: params.page,
     limit: params.perPage,
     ...(params.search && { search: params.search }),
-    ...(params.sort && { sort: params.sort, dir: params.dir === 'desc' ? 'desc' : 'asc' })
+    ...(params.sort && { sort: params.sort, dir: params.dir === 'desc' ? 'desc' : 'asc' }),
+    ...(Object.keys(activeFilters).length > 0 && { filters: activeFilters })
   };
 
   const { data } = useQuery({
@@ -117,7 +144,7 @@ export function ResourceTable<T>({
   const [selected, setSelected] = useState<Set<string | number>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editing, setEditing] = useState<T | null>(null);
-  const filterKey = `${params.page}|${params.perPage}|${params.search}|${params.sort}|${params.dir}`;
+  const filterKey = `${params.page}|${params.perPage}|${params.search}|${params.sort}|${params.dir}|${JSON.stringify(activeFilters)}`;
   useEffect(() => setSelected(new Set()), [filterKey]);
 
   const pageIds = rows.map(getId);
@@ -134,7 +161,11 @@ export function ResourceTable<T>({
   });
 
   const selectAll = useMutation({
-    mutationFn: () => getAllIds({ search: params.search || undefined }),
+    mutationFn: () =>
+      getAllIds({
+        search: params.search || undefined,
+        ...(Object.keys(activeFilters).length > 0 && { filters: activeFilters })
+      }),
     onSuccess: (ids) => setSelected(new Set(ids))
   });
 
@@ -150,7 +181,7 @@ export function ResourceTable<T>({
 
   return (
     <div className='bg-card overflow-hidden rounded-xl border shadow-xs'>
-      {(searchable || selected.size > 0) && (
+      {(searchable || filterDefs.length > 0 || selected.size > 0) && (
         <div className='flex items-center justify-between gap-3 p-3'>
           <div>
             {selected.size > 0 && (
@@ -168,18 +199,56 @@ export function ResourceTable<T>({
               </DropdownMenu>
             )}
           </div>
-          {searchable && (
-            <div className='relative w-full max-w-64'>
-              <Icons.search className='text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2' />
-              <Input
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder='Search'
-                aria-label='Search'
-                className='pl-9'
-              />
-            </div>
-          )}
+          <div className='flex flex-1 flex-wrap items-center justify-end gap-2'>
+            {filterDefs.map((f) => (
+              <Select
+                key={f.id}
+                items={[{ value: 'all', label: `All ${f.label.toLowerCase()}` }, ...f.options]}
+                value={activeFilters[f.id] ?? 'all'}
+                onValueChange={(v) => setParams({ [`f_${f.id}`]: v === 'all' ? null : v, page: 1 })}
+              >
+                <SelectTrigger aria-label={`Filter by ${f.label.toLowerCase()}`} className='w-40'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value='all'>All {f.label.toLowerCase()}</SelectItem>
+                    {f.options.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            ))}
+            {Object.keys(activeFilters).length > 0 && (
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() =>
+                  setParams({
+                    ...Object.fromEntries(filterDefs.map((f) => [`f_${f.id}`, null])),
+                    page: 1
+                  })
+                }
+              >
+                Reset filters
+              </Button>
+            )}
+            {searchable && (
+              <div className='relative w-full max-w-64'>
+                <Icons.search className='text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+                <Input
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder={`Search ${noun.plural}`}
+                  aria-label={`Search ${noun.plural}`}
+                  className='pl-9'
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -253,7 +322,7 @@ export function ResourceTable<T>({
                 )}
               </TableHead>
             ))}
-            <TableHead className='w-24' />
+            <TableHead className='w-px' />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -294,28 +363,31 @@ export function ResourceTable<T>({
                     <TableCell key={column.id}>{column.cell(row)}</TableCell>
                   ))}
                   <TableCell className='pr-6 text-right'>
-                    {editHref ? (
-                      <Link
-                        href={editHref(row)}
-                        className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
-                      >
-                        {canWrite ? (
+                    <span className='inline-flex items-center gap-4'>
+                      {rowActions?.(row)}
+                      {editHref ? (
+                        <Link
+                          href={editHref(row)}
+                          className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
+                        >
+                          {canWrite ? (
+                            <Icons.edit className='size-4' />
+                          ) : (
+                            <Icons.eye className='size-4' />
+                          )}
+                          {canWrite ? 'Edit' : 'View'}
+                        </Link>
+                      ) : canWrite ? (
+                        <button
+                          type='button'
+                          onClick={() => setEditing(row)}
+                          className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
+                        >
                           <Icons.edit className='size-4' />
-                        ) : (
-                          <Icons.eye className='size-4' />
-                        )}
-                        {canWrite ? 'Edit' : 'View'}
-                      </Link>
-                    ) : canWrite ? (
-                      <button
-                        type='button'
-                        onClick={() => setEditing(row)}
-                        className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
-                      >
-                        <Icons.edit className='size-4' />
-                        Edit
-                      </button>
-                    ) : null}
+                          Edit
+                        </button>
+                      ) : null}
+                    </span>
                   </TableCell>
                 </TableRow>
               );

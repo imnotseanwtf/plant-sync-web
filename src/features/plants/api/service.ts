@@ -32,20 +32,24 @@ function toPlant(p: Prisma.PlantGetPayload<{ select: typeof plantSelect }>): Pla
 const DEVICE_TAKEN = 'The device identifier has already been taken.';
 
 // Filament made the device name and plant name searchable.
-function searchWhere(search?: string): Prisma.PlantWhereInput {
-  return search
-    ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { deviceIdentifier: { name: { contains: search, mode: 'insensitive' } } }
-        ]
-      }
-    : {};
+function searchWhere(filters: Pick<ListFilters, 'search' | 'filters'>): Prisma.PlantWhereInput {
+  const readings = filters.filters?.readings;
+  return {
+    ...(filters.search && {
+      OR: [
+        { name: { contains: filters.search, mode: 'insensitive' } },
+        { deviceIdentifier: { name: { contains: filters.search, mode: 'insensitive' } } }
+      ]
+    }),
+    // `readings` filters to plants whose device has (or hasn't yet) reported a sensor value.
+    ...(readings === 'with' && { deviceIdentifier: { sensorValues: { some: {} } } }),
+    ...(readings === 'without' && { deviceIdentifier: { sensorValues: { none: {} } } })
+  };
 }
 
 export async function getPlants(filters: ListFilters): Promise<ListResponse<Plant>> {
   await requireUser();
-  const where = searchWhere(filters.search);
+  const where = searchWhere(filters);
   const orderBy: Prisma.PlantOrderByWithRelationInput[] = [
     ...sortBy<Prisma.PlantOrderByWithRelationInput>(filters.sort, filters.dir, {
       deviceName: (d) => ({ deviceIdentifier: { name: d } }),
@@ -77,10 +81,12 @@ export async function getPlant(id: number): Promise<Plant | null> {
   return plant ? toPlant(plant) : null;
 }
 
-export async function getPlantIds(filters: Pick<ListFilters, 'search'>): Promise<number[]> {
+export async function getPlantIds(
+  filters: Pick<ListFilters, 'search' | 'filters'>
+): Promise<number[]> {
   await requireUser();
   const rows = await prisma.plant.findMany({
-    where: searchWhere(filters.search),
+    where: searchWhere(filters),
     select: { id: true }
   });
   return rows.map((r) => Number(r.id));

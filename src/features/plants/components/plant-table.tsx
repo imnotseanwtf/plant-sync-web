@@ -4,6 +4,7 @@ import { ResourceTable, type ResourceColumn } from '@/components/resource/resour
 import { deletePlantsAndRefresh } from '../api/mutations';
 import { plantKeys } from '../api/queries';
 import { getPlantIds, getPlants } from '../api/service';
+import type { FilterDef } from '@/types/resource';
 import type { Plant } from '../api/types';
 
 const n = (value: number) => value.toLocaleString('en-US');
@@ -39,6 +40,17 @@ const columns: ResourceColumn<Plant>[] = [
   }
 ];
 
+const filterDefs: FilterDef[] = [
+  {
+    id: 'readings',
+    label: 'Plants',
+    options: [
+      { value: 'with', label: 'Reporting readings' },
+      { value: 'without', label: 'No readings yet' }
+    ]
+  }
+];
+
 export function PlantTable() {
   return (
     <ResourceTable
@@ -48,7 +60,7 @@ export function PlantTable() {
       editHref={(p) => `/dashboard/plants/${p.id}/edit`}
       queryKey={plantKeys.list}
       fetchList={getPlants}
-      searchable
+      filterDefs={filterDefs}
       writePermission='plants:write'
       deleteMany={deletePlantsAndRefresh}
       getAllIds={getPlantIds}
