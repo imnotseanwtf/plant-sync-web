@@ -126,9 +126,11 @@ export function UserFormSheet({
             name='roleIds'
             mode='array'
             children={(field) => (
-              <field.CheckboxGroupField
+              <field.MultiSelectField
                 label='Roles'
                 required
+                placeholder='Select roles…'
+                emptyMessage='No roles found.'
                 description='A user can have several roles and gets the permissions of all of them.'
                 options={roleOptions.data ?? []}
               />

@@ -103,6 +103,7 @@ All render inside `form.AppField` as `field.XxxField`; every one takes
 | `ColorField` | `string` | Native picker + hex input |
 | `FileUploadField` | `File[]` | Wraps `FileUploader`, `maxSize`/`maxFiles` |
 | `CheckboxGroupField` | `string[]` | Needs `mode='array'` on the AppField |
+| `MultiSelectField` | `string[]` | Searchable dropdown with removable chips; needs `mode='array'` on the AppField |
 | `TagsField` | `string[]` | Needs `mode='array'`; Enter/Add pushes, badges remove |
 | `ToggleGroupField` | `string[]` | Needs `mode='array'`; pass `ToggleGroupItem`s as children |
 

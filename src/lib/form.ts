@@ -15,6 +15,7 @@ import { OtpField } from '@/components/forms/fields/otp-field';
 import { ColorField } from '@/components/forms/fields/color-field';
 import { FileUploadField } from '@/components/forms/fields/file-upload-field';
 import { CheckboxGroupField } from '@/components/forms/fields/checkbox-group-field';
+import { MultiSelectField } from '@/components/forms/fields/multi-select-field';
 import { TagsField } from '@/components/forms/fields/tags-field';
 import { ToggleGroupField } from '@/components/forms/fields/toggle-group-field';
 import { SubmitButton } from '@/components/forms/submit-button';
@@ -52,6 +53,7 @@ export const { useAppForm, withForm } = createFormHook({
     ColorField,
     FileUploadField,
     CheckboxGroupField,
+    MultiSelectField,
     TagsField,
     ToggleGroupField
   },
