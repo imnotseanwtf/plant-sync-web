@@ -1,5 +1,6 @@
 import { requireUser } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma';
+import { OFFLINE_AFTER_MS } from '@/lib/sensor-health';
 
 export type PlantStatus =
   | 'irrigating'
@@ -27,9 +28,6 @@ export type DashboardSummary = {
   needsWater: number;
   plants: PlantSummary[];
 };
-
-/** A device that hasn't reported for this long is shown as offline (it posts every few seconds). */
-const OFFLINE_AFTER_MS = 10 * 60 * 1000;
 
 /** Server-only loader for the overview page (not a server action, so it isn't a public endpoint). */
 export async function getDashboardSummary(): Promise<DashboardSummary> {
