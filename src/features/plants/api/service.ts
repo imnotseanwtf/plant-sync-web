@@ -5,6 +5,7 @@ import { requirePermission, requireUser } from '@/lib/auth/current-user';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging, sortBy } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
+import { parseDesign } from '@/lib/wiring/design';
 import type { ListFilters, ListResponse } from '@/types/resource';
 import { plantSchema } from '../schemas/plant';
 import type { Plant, PlantMutationPayload, PlantOverview, SensorReading } from './types';
@@ -136,7 +137,7 @@ export async function getPlantOverview(id: number): Promise<PlantOverview | null
   const startOfDay = new Date();
   startOfDay.setUTCHours(0, 0, 0, 0);
 
-  const [rows, irrigatedToday] = await Promise.all([
+  const [rows, irrigatedToday, device] = await Promise.all([
     prisma.sensorValue.findMany({
       where: { deviceIdentifierId: plant.deviceIdentifierId },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -148,6 +149,10 @@ export async function getPlantOverview(id: number): Promise<PlantOverview | null
         isIrrigating: true,
         createdAt: { gte: startOfDay }
       }
+    }),
+    prisma.deviceIdentifier.findUnique({
+      where: { id: plant.deviceIdentifierId },
+      select: { wiring: true }
     })
   ]);
 
@@ -161,5 +166,11 @@ export async function getPlantOverview(id: number): Promise<PlantOverview | null
     createdAt: r.createdAt.toISOString()
   }));
 
-  return { plant: toPlant(plant), latest: readings[0] ?? null, irrigatedToday, readings };
+  return {
+    plant: toPlant(plant),
+    latest: readings[0] ?? null,
+    irrigatedToday,
+    wiring: parseDesign(device?.wiring),
+    readings
+  };
 }

@@ -10,6 +10,8 @@ datasource db {
 model DeviceIdentifier {
   id           String        @id @default(uuid(7)) @db.Uuid
   name         String        @unique @db.VarChar(255)
+  /// Board and sensor wiring design (see src/lib/wiring); null means the default layout.
+  wiring       Json?
   createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)
   plant        Plant?

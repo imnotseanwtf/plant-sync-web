@@ -29,6 +29,13 @@ Prisma 7 and PostgreSQL. Scaffolded from
 
 Set `DEVICE_API_KEY` to require an `X-Device-Key` header on both. Leave it empty to keep the endpoints open.
 
+### Device wiring
+
+Each plant page shows its device's wiring: the board, the parts wired to it and live health, so a
+sensor that returns `null` is flagged "Needs check / repair". Admins and operators can design it with
+**Edit wiring** (pick a board, add the soil sensor, BH1750, DHT22 and relay, assign pins). The design
+is stored per device in `device_identifiers.wiring`; boards and parts are defined in `src/lib/wiring`.
+
 ## Local development
 
 ```bash
