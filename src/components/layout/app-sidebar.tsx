@@ -145,6 +145,12 @@ export default function AppSidebar({ user }: { user: { name: string; email: stri
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    render={<Link href='/dashboard/profile' aria-label='Profile and password' />}
+                  >
+                    <Icons.user className='mr-2 h-4 w-4' />
+                    Profile &amp; password
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => signOut()}>
                     <Icons.logout className='mr-2 h-4 w-4' />
                     Sign out
