@@ -2,7 +2,7 @@
 
 import { ResourceTable, type ResourceColumn } from '@/components/resource/resource-table';
 import { Badge } from '@/components/ui/badge';
-import { PERMISSION_LABELS } from '@/lib/auth/rbac';
+import { ACTIONS, ACTION_LABELS, RESOURCE_LABELS, actionsByResource } from '@/lib/auth/rbac';
 import { deleteRolesAndRefresh } from '../api/mutations';
 import { roleKeys } from '../api/queries';
 import { getRoleIds, getRoles } from '../api/service';
@@ -26,12 +26,15 @@ const columns: ResourceColumn<RoleRow>[] = [
     label: 'Permissions',
     cell: (r) =>
       r.permissions.length === 0 ? (
-        <span className='text-muted-foreground'>View only</span>
+        <span className='text-muted-foreground'>No permissions</span>
       ) : (
         <div className='flex flex-wrap gap-1'>
-          {r.permissions.map((p) => (
-            <Badge key={p} variant='secondary'>
-              {PERMISSION_LABELS[p]}
+          {actionsByResource(r.permissions).map(({ resource, actions }) => (
+            <Badge key={resource} variant='secondary'>
+              {RESOURCE_LABELS[resource]}:{' '}
+              {actions.length === ACTIONS.length
+                ? 'Full access'
+                : actions.map((a) => ACTION_LABELS[a]).join(', ')}
             </Badge>
           ))}
         </div>
@@ -49,6 +52,8 @@ export function RoleTable() {
       queryKey={roleKeys.list}
       fetchList={getRoles}
       deleteMany={deleteRolesAndRefresh}
+      editPermission='edit:roles'
+      deletePermission='delete:roles'
       getAllIds={getRoleIds}
       renderEditor={({ row, open, onOpenChange }) => (
         <RoleFormSheet role={row ?? undefined} open={open} onOpenChange={onOpenChange} />

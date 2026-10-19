@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { useCan } from '@/components/auth/current-user-provider';
 import { Icons } from '@/components/icons';
 import { FormSheet } from '@/components/resource/form-sheet';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ export function UserFormSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const canDelete = useCan()('delete:users');
   const another = useRef(false);
   const roleOptions = useQuery(roleOptionsQueryOptions());
   const create = useMutation(createUserMutation);
@@ -83,7 +85,7 @@ export function UserFormSheet({
         another.current = true;
         form.handleSubmit();
       }}
-      onDelete={user ? () => deleteUsersAndRefresh([user.id]) : undefined}
+      onDelete={user && canDelete ? () => deleteUsersAndRefresh([user.id]) : undefined}
       deleteTitle={user ? `Delete ${user.name}?` : undefined}
     >
       <form
@@ -166,7 +168,9 @@ export function UserFormSheet({
 }
 
 export function UserFormSheetTrigger() {
+  const canCreate = useCan()('create:users');
   const [open, setOpen] = useState(false);
+  if (!canCreate) return null;
   return (
     <>
       <Button onClick={() => setOpen(true)}>

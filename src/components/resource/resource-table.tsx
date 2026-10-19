@@ -74,8 +74,10 @@ type Props<T> = {
   getAllIds: (filters: Pick<ListFilters, 'search' | 'filters'>) => Promise<(string | number)[]>;
   /** Extra links shown before Edit in each row (they handle their own permissions). */
   rowActions?: (row: T) => React.ReactNode;
-  /** Without it the table is read-only: no selection, bulk delete or editor (edit pages become "View"). */
-  writePermission?: Permission;
+  /** Needed to edit rows; without it there is no editor (edit pages become "View"). */
+  editPermission?: Permission;
+  /** Needed to select rows and bulk delete. */
+  deletePermission?: Permission;
 };
 
 export function ResourceTable<T>({
@@ -91,9 +93,12 @@ export function ResourceTable<T>({
   deleteMany,
   getAllIds,
   rowActions,
-  writePermission
+  editPermission,
+  deletePermission
 }: Props<T>) {
-  const canWrite = useCan()(writePermission);
+  const can = useCan();
+  const canEdit = can(editPermission);
+  const canDelete = can(deletePermission);
   const parsers = useMemo(
     () => ({
       page: parseAsInteger.withDefault(1),
@@ -282,7 +287,7 @@ export function ResourceTable<T>({
       <Table>
         <TableHeader className='bg-muted/40'>
           <TableRow>
-            {canWrite ? (
+            {canDelete ? (
               <TableHead className='w-10 pl-6'>
                 <Checkbox
                   aria-label='Select all on this page'
@@ -344,7 +349,7 @@ export function ResourceTable<T>({
                   <TableCell
                     className={cn('pl-6', isSelected && 'border-l-primary border-l-2 pl-[22px]')}
                   >
-                    {canWrite && (
+                    {canDelete && (
                       <Checkbox
                         aria-label={`Select ${noun.singular}`}
                         checked={isSelected}
@@ -370,14 +375,14 @@ export function ResourceTable<T>({
                           href={editHref(row)}
                           className='text-primary inline-flex items-center gap-1 text-sm font-medium hover:underline'
                         >
-                          {canWrite ? (
+                          {canEdit ? (
                             <Icons.edit className='size-4' />
                           ) : (
                             <Icons.eye className='size-4' />
                           )}
-                          {canWrite ? 'Edit' : 'View'}
+                          {canEdit ? 'Edit' : 'View'}
                         </Link>
-                      ) : canWrite ? (
+                      ) : canEdit ? (
                         <button
                           type='button'
                           onClick={() => setEditing(row)}

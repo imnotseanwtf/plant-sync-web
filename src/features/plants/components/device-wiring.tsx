@@ -12,7 +12,7 @@ import { WiringCard } from './wiring-card';
 /** Polls the plant overview (shared cache with the widgets) and ticks a clock for staleness. */
 export function DeviceWiring({ plantId, initial }: { plantId: number; initial: PlantOverview }) {
   const { latest, plant, wiring } = usePlantOverview(plantId, initial);
-  const canEdit = useCan()('devices:write');
+  const canEdit = useCan()('edit:devices');
   const design = wiring ?? defaultDesign();
 
   // `now` stays null until mounted so the first client render matches the server's.

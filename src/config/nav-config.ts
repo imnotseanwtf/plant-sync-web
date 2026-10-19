@@ -1,8 +1,7 @@
 import { NavGroup } from '@/types';
 
 /**
- * Navigation: Dashboard on top, then "User Management" (Users and Roles, for people who may manage
- * users; the group hides itself for everyone else) and "Plant Management". Used for both the
+ * Navigation: Dashboard on top, then "User Management" (Users and Roles) and "Plant Management". Used for both the
  * sidebar and the Cmd+K bar.
  */
 export const navGroups: NavGroup[] = [
@@ -27,7 +26,7 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/users',
         icon: 'teams',
         isActive: false,
-        access: { permission: 'users:manage' },
+        access: { permission: 'view:users' },
         shortcut: ['u', 'u'],
         items: []
       },
@@ -36,7 +35,7 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/roles',
         icon: 'shield',
         isActive: false,
-        access: { permission: 'users:manage' },
+        access: { permission: 'view:roles' },
         shortcut: ['r', 'r'],
         items: []
       }
@@ -50,6 +49,7 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/device-identifiers',
         icon: 'device',
         isActive: false,
+        access: { permission: 'view:devices' },
         shortcut: ['v', 'v'],
         items: []
       },
@@ -58,6 +58,7 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/plants',
         icon: 'plant',
         isActive: false,
+        access: { permission: 'view:plants' },
         shortcut: ['p', 'p'],
         items: []
       }

@@ -58,6 +58,8 @@ export function UserTable() {
       fetchList={getUsers}
       deleteMany={deleteUsersAndRefresh}
       filterDefs={filterDefs}
+      editPermission='edit:users'
+      deletePermission='delete:users'
       getAllIds={getUserIds}
       renderEditor={({ row, open, onOpenChange }) => (
         <UserFormSheet user={row ?? undefined} open={open} onOpenChange={onOpenChange} />

@@ -14,7 +14,7 @@ export default async function DeviceWiringPage({
 }: {
   params: Promise<{ deviceId: string }>;
 }) {
-  await requirePagePermission('devices:write');
+  await requirePagePermission('edit:devices');
   const { deviceId } = await params;
   const device = await getDevice(deviceId);
   if (!device) notFound();

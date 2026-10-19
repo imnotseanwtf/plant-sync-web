@@ -8,7 +8,7 @@ import { searchParamsCache } from '@/lib/searchparams';
 export const metadata = { title: 'Roles' };
 
 export default async function RolesPage(props: { searchParams: Promise<SearchParams> }) {
-  await requirePagePermission('users:manage');
+  await requirePagePermission('view:roles');
   searchParamsCache.parse(await props.searchParams);
 
   return (

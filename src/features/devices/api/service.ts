@@ -33,7 +33,7 @@ function deviceWhere(
 }
 
 export async function getDevices(filters: ListFilters): Promise<ListResponse<Device>> {
-  await requireUser();
+  await requirePermission('view:devices');
   const [rows, total] = await Promise.all([
     prisma.deviceIdentifier.findMany({
       where: deviceWhere(filters),
@@ -50,7 +50,7 @@ export async function getDevices(filters: ListFilters): Promise<ListResponse<Dev
 }
 
 export async function getDevice(id: string): Promise<Device | null> {
-  await requireUser();
+  await requirePermission('view:devices');
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const device = await prisma.deviceIdentifier.findUnique({ where: { id }, select });
   return device ? toDevice(device) : null;
@@ -59,7 +59,7 @@ export async function getDevice(id: string): Promise<Device | null> {
 export async function getDeviceIds(
   filters: Pick<ListFilters, 'search' | 'filters'>
 ): Promise<string[]> {
-  await requireUser();
+  await requirePermission('view:devices');
   const rows = await prisma.deviceIdentifier.findMany({
     where: deviceWhere(filters),
     select: { id: true }
@@ -79,7 +79,7 @@ export async function getDeviceOptions(): Promise<DeviceOption[]> {
 }
 
 export async function createDevice(data: DeviceMutationPayload): Promise<ActionResult<Device>> {
-  await requirePermission('devices:write');
+  await requirePermission('create:devices');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -93,7 +93,7 @@ export async function updateDevice(
   id: string,
   data: DeviceMutationPayload
 ): Promise<ActionResult<Device>> {
-  await requirePermission('devices:write');
+  await requirePermission('edit:devices');
   const parsed = deviceSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -107,7 +107,7 @@ export async function updateDevice(
 
 /** Deleting a device also deletes its plant and all of its readings (ON DELETE CASCADE). */
 export async function deleteDevices(ids: string[]): Promise<ActionResult<number>> {
-  await requirePermission('devices:write');
+  await requirePermission('delete:devices');
   const { count } = await prisma.deviceIdentifier.deleteMany({ where: { id: { in: ids } } });
   return ok(count);
 }
@@ -117,7 +117,7 @@ export async function saveDeviceWiring(
   id: string,
   data: WiringDesign | null
 ): Promise<ActionResult<WiringDesign | null>> {
-  await requirePermission('devices:write');
+  await requirePermission('edit:devices');
   if (!/^[0-9a-f-]{36}$/i.test(id)) return fail('Device not found.');
 
   let design: WiringDesign | null = null;

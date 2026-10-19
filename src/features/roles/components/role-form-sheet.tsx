@@ -6,15 +6,15 @@ import { toast } from 'sonner';
 import { Icons } from '@/components/icons';
 import { FormSheet } from '@/components/resource/form-sheet';
 import { Button } from '@/components/ui/button';
-import { FieldGroup } from '@/components/ui/field';
-import { PERMISSIONS, PERMISSION_LABELS } from '@/lib/auth/rbac';
+import { useCan } from '@/components/auth/current-user-provider';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { useAppForm } from '@/lib/form';
 import { createRoleMutation, deleteRolesAndRefresh, updateRoleMutation } from '../api/mutations';
 import type { RoleRow } from '../api/types';
+import { PermissionMatrix } from './permission-matrix';
 import { roleSchema, type RoleFormValues } from '../schemas/role';
 
 const FORM_ID = 'role-form-sheet';
-const PERMISSION_OPTIONS = PERMISSIONS.map((p) => ({ value: p, label: PERMISSION_LABELS[p] }));
 
 export function RoleFormSheet({
   role,
@@ -25,6 +25,7 @@ export function RoleFormSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const canDelete = useCan()('delete:roles');
   const another = useRef(false);
   const create = useMutation(createRoleMutation);
   const update = useMutation(updateRoleMutation);
@@ -78,7 +79,7 @@ export function RoleFormSheet({
         another.current = true;
         form.handleSubmit();
       }}
-      onDelete={role ? () => deleteRolesAndRefresh([role.id]) : undefined}
+      onDelete={role && canDelete ? () => deleteRolesAndRefresh([role.id]) : undefined}
       deleteTitle={role ? `Delete ${role.name}? Its users lose these permissions.` : undefined}
     >
       <form
@@ -100,15 +101,20 @@ export function RoleFormSheet({
               <field.TextareaField label='Description' placeholder='What this role is for' />
             )}
           />
-          <form.AppField
+          <form.Field
             name='permissions'
-            mode='array'
             children={(field) => (
-              <field.CheckboxGroupField
-                label='Permissions'
-                description='Everyone can view the dashboard, plants and devices. Tick what this role may also change.'
-                options={PERMISSION_OPTIONS}
-              />
+              <Field>
+                <FieldLabel>Permissions</FieldLabel>
+                <FieldDescription>
+                  Choose what this role may do with each resource. Create, edit and delete include
+                  view.
+                </FieldDescription>
+                <PermissionMatrix
+                  value={field.state.value}
+                  onChange={(next) => field.handleChange(next)}
+                />
+              </Field>
             )}
           />
         </FieldGroup>
@@ -118,7 +124,9 @@ export function RoleFormSheet({
 }
 
 export function RoleFormSheetTrigger() {
+  const canCreate = useCan()('create:roles');
   const [open, setOpen] = useState(false);
+  if (!canCreate) return null;
   return (
     <>
       <Button onClick={() => setOpen(true)}>

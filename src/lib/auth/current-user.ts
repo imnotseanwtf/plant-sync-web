@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import type { UserType } from './user-type';
-import { can, isPermission, type Permission } from './rbac';
+import { can, canAny, isPermission, type Permission } from './rbac';
 import { SESSION_COOKIE, verifySessionToken } from './session';
 
 export type CurrentUser = {
@@ -69,5 +69,12 @@ export async function requirePermission(permission: Permission): Promise<Current
 export async function requirePagePermission(permission: Permission): Promise<CurrentUser> {
   const user = await requireUser();
   if (!can(user.permissions, permission)) redirect('/dashboard/overview');
+  return user;
+}
+
+/** Server actions shared by several screens (e.g. role names for the user form): any one permission will do. */
+export async function requireAnyPermission(...needed: Permission[]): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (!canAny(user.permissions, needed)) throw new Error('You do not have permission to do that.');
   return user;
 }

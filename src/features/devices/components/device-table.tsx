@@ -37,7 +37,8 @@ export function DeviceTable() {
       deleteMany={deleteDevicesAndRefresh}
       filterDefs={filterDefs}
       getAllIds={getDeviceIds}
-      writePermission='devices:write'
+      editPermission='edit:devices'
+      deletePermission='delete:devices'
       rowActions={(device) => <DeviceWiringLink device={device} />}
       renderEditor={({ row, open, onOpenChange }) => (
         <DeviceFormSheet device={row ?? undefined} open={open} onOpenChange={onOpenChange} />

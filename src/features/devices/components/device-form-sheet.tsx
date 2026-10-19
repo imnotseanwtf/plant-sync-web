@@ -30,6 +30,7 @@ export function DeviceFormSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const canDelete = useCan()('delete:devices');
   const another = useRef(false);
   const create = useMutation(createDeviceMutation);
   const update = useMutation(updateDeviceMutation);
@@ -79,7 +80,7 @@ export function DeviceFormSheet({
         another.current = true;
         form.handleSubmit();
       }}
-      onDelete={device ? () => deleteDevicesAndRefresh([device.id]) : undefined}
+      onDelete={device && canDelete ? () => deleteDevicesAndRefresh([device.id]) : undefined}
       deleteTitle={
         device ? `Delete ${device.name}? Its plant and readings are deleted too.` : undefined
       }
@@ -119,7 +120,7 @@ export function DeviceFormSheet({
 }
 
 export function DeviceFormSheetTrigger() {
-  const canWrite = useCan()('devices:write');
+  const canWrite = useCan()('create:devices');
   const [open, setOpen] = useState(false);
   if (!canWrite) return null;
   return (

@@ -4,19 +4,19 @@ import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
 
-export const LAST_MANAGER = 'At least one user must keep the permission to manage users.';
+export const LAST_MANAGER = 'At least one user must keep the permission to edit roles.';
 
 class LastManagerError extends Error {}
 
 const managers = (tx: Prisma.TransactionClient) =>
   tx.user.count({
-    where: { roles: { some: { role: { permissions: { has: 'users:manage' } } } } }
+    where: { roles: { some: { role: { permissions: { has: 'edit:roles' } } } } }
   });
 
 /**
  * Runs `change` in a transaction and rolls it back if it would leave nobody able to manage users
- * (deleting a user or role, unassigning a role, or removing `users:manage` from a role). Without
- * this the last admin could lock everyone out of the screens that fix it.
+ * (deleting a user or role, unassigning a role, or removing `edit:roles` from a role): the last
+ * person who can edit roles is the way back from any other mistake.
  */
 export async function guardManagers<T>(
   change: (tx: Prisma.TransactionClient) => Promise<T>,

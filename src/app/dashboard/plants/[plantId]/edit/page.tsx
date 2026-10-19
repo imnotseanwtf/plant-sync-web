@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import PageContainer from '@/components/layout/page-container';
 import { getPlantOverview } from '@/features/plants/api/service';
 import { DeviceWiring } from '@/features/plants/components/device-wiring';
+import { requirePagePermission } from '@/lib/auth/current-user';
 import { PlantDeleteButton } from '@/features/plants/components/plant-delete-button';
 import { PlantForm } from '@/features/plants/components/plant-form';
 import { PlantWidgets } from '@/features/plants/components/plant-widgets';
@@ -11,6 +12,7 @@ export const metadata = { title: 'Edit Plant' };
 
 /** Stats and charts above the form, the live readings table below it. */
 export default async function EditPlantPage({ params }: { params: Promise<{ plantId: string }> }) {
+  await requirePagePermission('view:plants');
   const { plantId } = await params;
   const id = Number(plantId);
   if (!Number.isSafeInteger(id) || id < 1) notFound();

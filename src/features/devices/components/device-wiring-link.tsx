@@ -7,7 +7,7 @@ import type { Device } from '../api/types';
 
 /** "Wiring" link in a device row, to the page where that device's board and sensors are designed. */
 export function DeviceWiringLink({ device }: { device: Device }) {
-  if (!useCan()('devices:write')) return null;
+  if (!useCan()('edit:devices')) return null;
   return (
     <Link
       href={`/dashboard/device-identifiers/${device.id}/wiring`}

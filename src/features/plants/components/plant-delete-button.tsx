@@ -5,7 +5,7 @@ import { DeleteRecordButton } from '@/components/resource/delete-record-button';
 import { deletePlantsAndRefresh } from '../api/mutations';
 
 export function PlantDeleteButton({ id }: { id: number }) {
-  if (!useCan()('plants:write')) return null;
+  if (!useCan()('delete:plants')) return null;
   return (
     <DeleteRecordButton
       title='Delete this plant?'
