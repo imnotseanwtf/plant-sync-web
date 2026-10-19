@@ -27,6 +27,10 @@ const humidityTone = (v: number): Tone => (v > 80 ? 'danger' : v < 60 ? 'warning
 
 /** Raw sensor doubles (24.840373983461856) shown with at most one decimal. */
 const round = (n: number) => Math.round(n * 10) / 10;
+const roundOrNull = (n: number | null) => (n === null ? null : round(n));
+
+const FAULT = 'Sensor not detected or defective';
+const noValue = (latest: unknown) => (latest ? 'No Signal' : 'No Data');
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -43,7 +47,8 @@ function shortTime(iso: string) {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-type Point = { time: string; full: string; moisture: number; temperature: number };
+/** null: sensor not detected or defective; charts leave a gap. */
+type Point = { time: string; full: string; moisture: number | null; temperature: number | null };
 
 /** Change between the last two readings, shown as the trend badge (like the starter's graphs). */
 function TrendBadge({ delta, unit }: { delta: number | null; unit: string }) {
@@ -59,8 +64,10 @@ function TrendBadge({ delta, unit }: { delta: number | null; unit: string }) {
   );
 }
 
-const lastDelta = (values: number[]) =>
-  values.length >= 2 ? values[values.length - 1] - values[values.length - 2] : null;
+const lastDelta = (values: (number | null)[]) => {
+  const [prev, last] = values.slice(-2);
+  return values.length >= 2 && prev !== null && last !== null ? last - prev : null;
+};
 
 const tooltipLabel = (_: unknown, payload: readonly { payload?: unknown }[]) =>
   (payload?.[0]?.payload as Point | undefined)?.full;
@@ -185,8 +192,8 @@ export function PlantWidgets({ plantId, initial }: { plantId: number; initial: P
     .map((r) => ({
       time: shortTime(r.createdAt),
       full: chartTime(r.createdAt),
-      moisture: round(r.moistureLevel),
-      temperature: round(r.temperature)
+      moisture: roundOrNull(r.moistureLevel),
+      temperature: roundOrNull(r.temperature)
     }));
 
   return (
@@ -200,15 +207,27 @@ export function PlantWidgets({ plantId, initial }: { plantId: number; initial: P
         />
         <Stat
           label='Light Intensity'
-          value={latest?.lightIntensity ? `${round(latest.lightIntensity)} lux` : 'No Data'}
-          description='Optimal range: 1000-2000 lux'
-          tone={latest ? lightTone(latest.lightIntensity) : 'warning'}
+          value={
+            latest?.lightIntensity != null ? `${round(latest.lightIntensity)} lux` : noValue(latest)
+          }
+          description={
+            latest && latest.lightIntensity === null ? FAULT : 'Optimal range: 1000-2000 lux'
+          }
+          tone={
+            latest?.lightIntensity != null
+              ? lightTone(latest.lightIntensity)
+              : latest
+                ? 'danger'
+                : 'warning'
+          }
         />
         <Stat
           label='Humidity'
-          value={latest?.humidity ? `${round(latest.humidity)}%` : 'No Data'}
-          description='Optimal range: 60-80%'
-          tone={latest ? humidityTone(latest.humidity) : 'warning'}
+          value={latest?.humidity != null ? `${round(latest.humidity)}%` : noValue(latest)}
+          description={latest && latest.humidity === null ? FAULT : 'Optimal range: 60-80%'}
+          tone={
+            latest?.humidity != null ? humidityTone(latest.humidity) : latest ? 'danger' : 'warning'
+          }
         />
       </div>
 

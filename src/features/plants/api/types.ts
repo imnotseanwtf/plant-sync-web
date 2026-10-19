@@ -16,10 +16,11 @@ export type PlantMutationPayload = PlantFormValues;
 
 export type SensorReading = {
   id: number;
-  moistureLevel: number;
-  humidity: number;
-  temperature: number;
-  lightIntensity: number;
+  /** null: the sensor was not detected or is defective. */
+  moistureLevel: number | null;
+  humidity: number | null;
+  temperature: number | null;
+  lightIntensity: number | null;
   isIrrigating: boolean;
   createdAt: string;
 };

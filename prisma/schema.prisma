@@ -34,13 +34,14 @@ model Plant {
   @@map("plants")
 }
 
+/// A null reading means that sensor was not detected or is defective.
 model SensorValue {
   id                 BigInt           @id @default(autoincrement())
   deviceIdentifierId String           @map("device_identifier_id") @db.Uuid
-  moistureLevel      Float            @map("moisture_level")
-  humidity           Float
-  temperature        Float
-  lightIntensity     Float            @map("light_intensity")
+  moistureLevel      Float?           @map("moisture_level")
+  humidity           Float?
+  temperature        Float?
+  lightIntensity     Float?           @map("light_intensity")
   isIrrigating       Boolean          @default(false) @map("is_irrigating")
   createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt          DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(0)

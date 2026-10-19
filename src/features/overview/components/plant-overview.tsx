@@ -13,7 +13,8 @@ const statusBadge: Record<
   'needs-water': { label: 'Needs water', variant: 'destructive' },
   ok: { label: 'Healthy', variant: 'secondary' },
   'no-data': { label: 'No data', variant: 'outline' },
-  offline: { label: 'Offline', variant: 'outline' }
+  offline: { label: 'Offline', variant: 'outline' },
+  'sensor-fault': { label: 'Sensor fault', variant: 'destructive' }
 };
 
 function Stat({ title, value, hint }: { title: string; value: number; hint: string }) {

@@ -1,7 +1,13 @@
 import { requireUser } from '@/lib/auth/current-user';
 import { prisma } from '@/lib/prisma';
 
-export type PlantStatus = 'irrigating' | 'needs-water' | 'ok' | 'no-data' | 'offline';
+export type PlantStatus =
+  | 'irrigating'
+  | 'needs-water'
+  | 'ok'
+  | 'no-data'
+  | 'offline'
+  | 'sensor-fault';
 
 export type PlantSummary = {
   id: number;
@@ -62,6 +68,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     let status: PlantStatus = 'no-data';
     if (latest) {
       if (now - latest.createdAt.getTime() > OFFLINE_AFTER_MS) status = 'offline';
+      else if (latest.moistureLevel === null) status = 'sensor-fault';
       else if (latest.isIrrigating) status = 'irrigating';
       else if (latest.moistureLevel <= p.moistureLevelMin) status = 'needs-water';
       else status = 'ok';
