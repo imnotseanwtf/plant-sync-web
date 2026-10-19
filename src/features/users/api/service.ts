@@ -59,7 +59,7 @@ function userWhere(filters: Pick<ListFilters, 'search' | 'filters'>): Prisma.Use
 }
 
 export async function getUsers(filters: ListFilters): Promise<ListResponse<AppUser>> {
-  await requirePermission('users:manage');
+  await requirePermission('view:users');
   const [rows, total] = await Promise.all([
     prisma.user.findMany({
       where: userWhere(filters),
@@ -73,7 +73,7 @@ export async function getUsers(filters: ListFilters): Promise<ListResponse<AppUs
 }
 
 export async function getUser(id: number): Promise<AppUser | null> {
-  await requirePermission('users:manage');
+  await requirePermission('view:users');
   const user = await prisma.user.findUnique({ where: { id: BigInt(id) }, select });
   return user ? toUser(user) : null;
 }
@@ -81,13 +81,13 @@ export async function getUser(id: number): Promise<AppUser | null> {
 export async function getUserIds(
   filters: Pick<ListFilters, 'search' | 'filters'>
 ): Promise<number[]> {
-  await requirePermission('users:manage');
+  await requirePermission('view:users');
   const rows = await prisma.user.findMany({ where: userWhere(filters), select: { id: true } });
   return rows.map((r) => Number(r.id));
 }
 
 export async function createUser(data: UserMutationPayload): Promise<ActionResult<AppUser>> {
-  await requirePermission('users:manage');
+  await requirePermission('create:users');
   const parsed = createUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { passwordConfirmation: _confirm, password, roleIds, ...rest } = parsed.data;
@@ -112,7 +112,7 @@ export async function updateUser(
   id: number,
   data: UserMutationPayload
 ): Promise<ActionResult<AppUser>> {
-  await requirePermission('users:manage');
+  await requirePermission('edit:users');
   const parsed = updateUserSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { passwordConfirmation: _confirm, password, roleIds, ...rest } = parsed.data;
@@ -136,7 +136,7 @@ export async function updateUser(
 }
 
 export async function deleteUsers(ids: number[]): Promise<ActionResult<number>> {
-  const me = await requirePermission('users:manage');
+  const me = await requirePermission('delete:users');
   if (ids.includes(me.id)) return fail("You can't delete your own account.");
   const result = await guardManagers((tx) =>
     tx.user.deleteMany({ where: { id: { in: ids.map(BigInt) } } })

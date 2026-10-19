@@ -5,9 +5,7 @@ import { deleteDevicesAndRefresh } from '../api/mutations';
 import { deviceKeys } from '../api/queries';
 import { getDeviceIds, getDevices } from '../api/service';
 import type { FilterDef } from '@/types/resource';
-import { DeviceWiringLink } from './device-wiring-link';
 import type { Device } from '../api/types';
-import { DeviceFormSheet } from './device-form-sheet';
 
 // Filament listed just `id` and `name`, neither searchable nor sortable.
 const columns: ResourceColumn<Device>[] = [
@@ -37,11 +35,9 @@ export function DeviceTable() {
       deleteMany={deleteDevicesAndRefresh}
       filterDefs={filterDefs}
       getAllIds={getDeviceIds}
-      writePermission='devices:write'
-      rowActions={(device) => <DeviceWiringLink device={device} />}
-      renderEditor={({ row, open, onOpenChange }) => (
-        <DeviceFormSheet device={row ?? undefined} open={open} onOpenChange={onOpenChange} />
-      )}
+      editPermission='edit:devices'
+      deletePermission='delete:devices'
+      editHref={(d) => `/dashboard/device-identifiers/${d.id}/edit`}
     />
   );
 }

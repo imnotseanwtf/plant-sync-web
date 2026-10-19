@@ -134,7 +134,7 @@ export function PlantFormSheet({
 }
 
 export function PlantFormSheetTrigger() {
-  const canWrite = useCan()('plants:write');
+  const canWrite = useCan()('create:plants');
   const [open, setOpen] = useState(false);
   if (!canWrite) return null;
   return (

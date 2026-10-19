@@ -15,7 +15,7 @@ import { plantSchema, type PlantFormValues } from '../schemas/plant';
 /** The Edit Plant form (the device can't be changed once a plant exists). */
 export function PlantForm({ plant }: { plant: Plant }) {
   const update = useMutation(updatePlantMutation);
-  const canWrite = useCan()('plants:write');
+  const canWrite = useCan()('edit:plants');
 
   const form = useAppForm({
     defaultValues: {

@@ -48,7 +48,7 @@ function searchWhere(filters: Pick<ListFilters, 'search' | 'filters'>): Prisma.P
 }
 
 export async function getPlants(filters: ListFilters): Promise<ListResponse<Plant>> {
-  await requireUser();
+  await requirePermission('view:plants');
   const where = searchWhere(filters);
   const orderBy: Prisma.PlantOrderByWithRelationInput[] = [
     ...sortBy<Prisma.PlantOrderByWithRelationInput>(filters.sort, filters.dir, {
@@ -76,7 +76,7 @@ export async function getPlants(filters: ListFilters): Promise<ListResponse<Plan
 }
 
 export async function getPlant(id: number): Promise<Plant | null> {
-  await requireUser();
+  await requirePermission('view:plants');
   const plant = await prisma.plant.findUnique({ where: { id: BigInt(id) }, select: plantSelect });
   return plant ? toPlant(plant) : null;
 }
@@ -84,7 +84,7 @@ export async function getPlant(id: number): Promise<Plant | null> {
 export async function getPlantIds(
   filters: Pick<ListFilters, 'search' | 'filters'>
 ): Promise<number[]> {
-  await requireUser();
+  await requirePermission('view:plants');
   const rows = await prisma.plant.findMany({
     where: searchWhere(filters),
     select: { id: true }
@@ -93,7 +93,7 @@ export async function getPlantIds(
 }
 
 export async function createPlant(data: PlantMutationPayload): Promise<ActionResult<Plant>> {
-  await requirePermission('plants:write');
+  await requirePermission('create:plants');
   const parsed = plantSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
@@ -110,7 +110,7 @@ export async function updatePlant(
   id: number,
   data: PlantMutationPayload
 ): Promise<ActionResult<Plant>> {
-  await requirePermission('plants:write');
+  await requirePermission('edit:plants');
   const parsed = plantSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { deviceIdentifierId: _ignored, ...values } = parsed.data;
@@ -127,13 +127,13 @@ export async function updatePlant(
 }
 
 export async function deletePlants(ids: number[]): Promise<ActionResult<number>> {
-  await requirePermission('plants:write');
+  await requirePermission('delete:plants');
   const { count } = await prisma.plant.deleteMany({ where: { id: { in: ids.map(BigInt) } } });
   return ok(count);
 }
 
 export async function getPlantOverview(id: number): Promise<PlantOverview | null> {
-  await requireUser();
+  await requirePermission('view:plants');
   const plant = await prisma.plant.findUnique({
     where: { id: BigInt(id) },
     select: plantSelect

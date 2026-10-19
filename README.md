@@ -31,19 +31,28 @@ Set `DEVICE_API_KEY` to require an `X-Device-Key` header on both. Leave it empty
 
 ### Roles and permissions
 
-Access is role-based and managed in the app: **Roles** (sidebar, admins only) is a normal CRUD screen
-where each role gets a set of permissions (`plants:write`, `devices:write`, `users:manage`; the
-catalog is `src/lib/auth/rbac.ts`), and a user can hold several roles on the **Users** form, getting
-the union of their permissions. Everyone can read. Migrations create Admin, Operator and Viewer and
-carry existing users over; nothing can remove the last user who may manage users. Create an admin
-from the command line with `bun run user:create "Name" email password [Role,Role]`.
+Access is role-based and managed in the app. **Roles** (sidebar → User Management) is a normal CRUD
+screen: each role gets a grid of permissions, a row per resource (Plants, Devices, Users, Roles) and a
+column per action (View, Create, Edit, Delete). They are stored on the role as `<action>:<resource>`
+strings such as `create:plants`; the catalog is `src/lib/auth/rbac.ts`. Create, edit and delete
+include view. A user can hold several roles on the **Users** form and gets the union of their
+permissions. Menu items, buttons and every server action check these; a user with no `view:` for a
+resource doesn't see its menu item and is sent back to the dashboard from its page.
+
+Migrations create Admin, Operator and Viewer and carry existing users and roles over. Nothing can
+remove the last user who may edit roles. Create an admin from the command line with
+`bun run user:create "Name" email password [Role,Role]`.
 
 ### Device wiring
 
 Each plant page shows its device's wiring: the board, the parts wired to it and live health, so a
-sensor that returns `null` is flagged "Needs check / repair". Admins and operators can design it with
-**Edit wiring** (pick a board, add the soil sensor, BH1750, DHT22 and relay, assign pins). The design
-is stored per device in `device_identifiers.wiring`; boards and parts are defined in `src/lib/wiring`.
+sensor that returns `null` is flagged "Needs check / repair". The wiring is designed on the device
+identifier's own **Create / Edit** page (Device Identifiers → New, or Edit on a row): pick a board, add
+the soil sensor, BH1750, DHT22 and relay, and assign pins. It is saved with the device in
+`device_identifiers.wiring`; boards and parts are defined in `src/lib/wiring`.
+
+Roles, Users and Device Identifiers all create and edit on their own pages
+(`/new` and `/<id>/edit`); users without the matching permission see the edit page read-only.
 
 ## Local development
 

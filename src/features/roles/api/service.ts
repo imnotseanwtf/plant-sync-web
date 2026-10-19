@@ -1,9 +1,9 @@
 'use server';
 
 import { Prisma } from '../../../../generated/prisma/client';
-import { requirePermission } from '@/lib/auth/current-user';
+import { requireAnyPermission, requirePermission } from '@/lib/auth/current-user';
 import { guardManagers } from '@/lib/auth/managers';
-import { isPermission } from '@/lib/auth/rbac';
+import { isPermission, withImpliedView } from '@/lib/auth/rbac';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging, sortBy } from '@/lib/db-helpers';
 import { prisma } from '@/lib/prisma';
@@ -36,7 +36,7 @@ function roleWhere(filters: Pick<ListFilters, 'search'>): Prisma.RoleWhereInput 
 }
 
 export async function getRoles(filters: ListFilters): Promise<ListResponse<RoleRow>> {
-  await requirePermission('users:manage');
+  await requirePermission('view:roles');
   const [rows, total] = await Promise.all([
     prisma.role.findMany({
       where: roleWhere(filters),
@@ -54,15 +54,22 @@ export async function getRoles(filters: ListFilters): Promise<ListResponse<RoleR
   return { rows: rows.map(toRole), total };
 }
 
+export async function getRole(id: number): Promise<RoleRow | null> {
+  await requirePermission('view:roles');
+  if (!Number.isSafeInteger(id) || id < 1) return null;
+  const role = await prisma.role.findUnique({ where: { id: BigInt(id) }, select });
+  return role ? toRole(role) : null;
+}
+
 export async function getRoleIds(filters: Pick<ListFilters, 'search'>): Promise<number[]> {
-  await requirePermission('users:manage');
+  await requirePermission('view:roles');
   const rows = await prisma.role.findMany({ where: roleWhere(filters), select: { id: true } });
   return rows.map((r) => Number(r.id));
 }
 
 /** Every role, for the user form's role picker and the users table filter. */
 export async function getRoleOptions(): Promise<RoleOption[]> {
-  await requirePermission('users:manage');
+  await requireAnyPermission('view:roles', 'view:users', 'create:users', 'edit:users');
   const rows = await prisma.role.findMany({
     select: { id: true, name: true },
     orderBy: { name: 'asc' }
@@ -71,12 +78,16 @@ export async function getRoleOptions(): Promise<RoleOption[]> {
 }
 
 export async function createRole(data: RoleMutationPayload): Promise<ActionResult<RoleRow>> {
-  await requirePermission('users:manage');
+  await requirePermission('create:roles');
   const parsed = roleSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   try {
     const role = await prisma.role.create({
-      data: { ...parsed.data, description: parsed.data.description || null },
+      data: {
+        ...parsed.data,
+        permissions: withImpliedView(parsed.data.permissions),
+        description: parsed.data.description || null
+      },
       select
     });
     return ok(toRole(role));
@@ -89,14 +100,18 @@ export async function updateRole(
   id: number,
   data: RoleMutationPayload
 ): Promise<ActionResult<RoleRow>> {
-  await requirePermission('users:manage');
+  await requirePermission('edit:roles');
   const parsed = roleSchema.safeParse(data);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const result = await guardManagers(
     (tx) =>
       tx.role.update({
         where: { id: BigInt(id) },
-        data: { ...parsed.data, description: parsed.data.description || null },
+        data: {
+          ...parsed.data,
+          permissions: withImpliedView(parsed.data.permissions),
+          description: parsed.data.description || null
+        },
         select
       }),
     { unique: NAME_TAKEN, notFound: 'Role not found.' }
@@ -106,7 +121,7 @@ export async function updateRole(
 
 /** Users who only had a deleted role are left with none and can only read. */
 export async function deleteRoles(ids: number[]): Promise<ActionResult<number>> {
-  await requirePermission('users:manage');
+  await requirePermission('delete:roles');
   const result = await guardManagers(
     (tx) => tx.role.deleteMany({ where: { id: { in: ids.map(BigInt) } } }),
     { notFound: 'Role not found.' }
