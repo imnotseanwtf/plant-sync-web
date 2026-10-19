@@ -2,7 +2,7 @@
  * Idempotent seeder: a login user plus demo devices, plants and sensor readings.
  *   bun run db:seed
  * Login comes from SEED_USER_NAME / SEED_USER_EMAIL / SEED_USER_PASSWORD (see .env.example).
- * The login is an admin; SEED_DEMO_USERS=true also adds an operator and a viewer.
+ * The login is an admin; an operator and a viewer demo user are added too (SEED_DEMO_USERS=false skips them).
  */
 import 'dotenv/config';
 import { hashPassword } from '../src/lib/auth/password';
@@ -59,9 +59,9 @@ async function main() {
   });
   console.log(`User ${email} ready`);
 
-  // One demo account per role/type combination, to try access control. Opt-in because the seeder
-  // runs on every deploy and these share a known password.
-  if (process.env.SEED_DEMO_USERS === 'true') {
+  // Demo operator and viewer accounts to try access control. They share a known password, so set
+  // SEED_DEMO_USERS=false on a real deployment.
+  if (process.env.SEED_DEMO_USERS !== 'false') {
     const demoPassword = await hashPassword(process.env.SEED_DEMO_PASSWORD || 'password');
     for (const u of demoUsers) {
       await prisma.user.upsert({
