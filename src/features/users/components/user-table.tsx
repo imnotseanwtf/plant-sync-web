@@ -1,8 +1,9 @@
 'use client';
 
 import { ResourceTable, type ResourceColumn } from '@/components/resource/resource-table';
-import { ROLE_LABELS } from '@/lib/auth/rbac';
-import { USER_TYPE_LABELS } from '@/lib/auth/user-type';
+import { ROLES, ROLE_LABELS } from '@/lib/auth/rbac';
+import { USER_TYPES, USER_TYPE_LABELS } from '@/lib/auth/user-type';
+import type { FilterDef } from '@/types/resource';
 import { deleteUsersAndRefresh } from '../api/mutations';
 import { userKeys } from '../api/queries';
 import { getUserIds, getUsers } from '../api/service';
@@ -15,6 +16,15 @@ const columns: ResourceColumn<AppUser>[] = [
   { id: 'role', label: 'Role', cell: (u) => ROLE_LABELS[u.role] }
 ];
 
+const filterDefs: FilterDef[] = [
+  { id: 'role', label: 'Roles', options: ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] })) },
+  {
+    id: 'userType',
+    label: 'Types',
+    options: USER_TYPES.map((t) => ({ value: t, label: USER_TYPE_LABELS[t] }))
+  }
+];
+
 export function UserTable() {
   return (
     <ResourceTable
@@ -24,7 +34,8 @@ export function UserTable() {
       queryKey={userKeys.list}
       fetchList={getUsers}
       deleteMany={deleteUsersAndRefresh}
-      getAllIds={() => getUserIds()}
+      filterDefs={filterDefs}
+      getAllIds={getUserIds}
       renderEditor={({ row, open, onOpenChange }) => (
         <UserFormSheet user={row ?? undefined} open={open} onOpenChange={onOpenChange} />
       )}

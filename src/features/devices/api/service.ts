@@ -20,10 +20,23 @@ const toDevice = (d: { id: string; name: string; wiring: Prisma.JsonValue | null
 });
 const NAME_TAKEN = 'The name has already been taken.';
 
+/** Search by name; `plant` filters to devices with or without a plant. */
+function deviceWhere(
+  filters: Pick<ListFilters, 'search' | 'filters'>
+): Prisma.DeviceIdentifierWhereInput {
+  const plant = filters.filters?.plant;
+  return {
+    ...(filters.search && { name: { contains: filters.search, mode: 'insensitive' } }),
+    ...(plant === 'with' && { plant: { isNot: null } }),
+    ...(plant === 'without' && { plant: null })
+  };
+}
+
 export async function getDevices(filters: ListFilters): Promise<ListResponse<Device>> {
   await requireUser();
   const [rows, total] = await Promise.all([
     prisma.deviceIdentifier.findMany({
+      where: deviceWhere(filters),
       select,
       orderBy: [
         ...sortBy(filters.sort, filters.dir, { name: (d) => ({ name: d }) }),
@@ -31,7 +44,7 @@ export async function getDevices(filters: ListFilters): Promise<ListResponse<Dev
       ],
       ...paging(filters.page, filters.limit)
     }),
-    prisma.deviceIdentifier.count()
+    prisma.deviceIdentifier.count({ where: deviceWhere(filters) })
   ]);
   return { rows: rows.map(toDevice), total };
 }
@@ -43,9 +56,14 @@ export async function getDevice(id: string): Promise<Device | null> {
   return device ? toDevice(device) : null;
 }
 
-export async function getDeviceIds(): Promise<string[]> {
+export async function getDeviceIds(
+  filters: Pick<ListFilters, 'search' | 'filters'>
+): Promise<string[]> {
   await requireUser();
-  const rows = await prisma.deviceIdentifier.findMany({ select: { id: true } });
+  const rows = await prisma.deviceIdentifier.findMany({
+    where: deviceWhere(filters),
+    select: { id: true }
+  });
   return rows.map((r) => r.id);
 }
 

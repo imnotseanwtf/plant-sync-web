@@ -2,7 +2,17 @@
 
 import { useState } from 'react';
 import { Icons } from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -11,6 +21,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import { PER_PAGE_OPTIONS } from '@/types/resource';
 import type { PlantOverview, SensorReading } from '../api/types';
 import { usePlantOverview } from './plant-widgets';
 
@@ -71,6 +82,21 @@ const columns: { key: SortKey; label: string; cell: (r: SensorReading) => React.
   }
 ];
 
+type StatusFilter = 'all' | 'irrigating' | 'idle' | 'fault';
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All readings' },
+  { value: 'irrigating', label: 'Irrigating' },
+  { value: 'idle', label: 'Not irrigating' },
+  { value: 'fault', label: 'Sensor fault' }
+];
+
+const hasFault = (r: SensorReading) =>
+  r.moistureLevel === null ||
+  r.humidity === null ||
+  r.temperature === null ||
+  r.lightIntensity === null;
+
 /** The Filament SensorValueTable widget: last 30 readings, newest first, sortable, polled every 5s. */
 export function SensorValueTable({
   plantId,
@@ -85,13 +111,41 @@ export function SensorValueTable({
     dir: 'desc'
   });
 
-  const rows = readings.toSorted((a, b) => {
+  const [status, setStatus] = useState<StatusFilter>('all');
+  const [search, setSearch] = useState('');
+  const [perPage, setPerPage] = useState(10);
+  const [page, setPage] = useState(1);
+
+  // Search matches the timestamp and the readings as they are shown.
+  const term = search.trim().toLowerCase();
+  const filtered = readings.filter((r) => {
+    if (status === 'irrigating' && !r.isIrrigating) return false;
+    if (status === 'idle' && r.isIrrigating) return false;
+    if (status === 'fault' && !hasFault(r)) return false;
+    if (!term) return true;
+    const text = [
+      timestamp(r.createdAt),
+      ...columns.slice(0, 4).map((c) => {
+        const cell = c.cell(r);
+        return typeof cell === 'string' ? cell : 'no signal';
+      })
+    ];
+    return text.join(' ').toLowerCase().includes(term);
+  });
+
+  const sorted = filtered.toSorted((a, b) => {
     const [x, y] = [a[sort.key], b[sort.key]];
     // Missing readings always sort last.
     if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
     const cmp = x < y ? -1 : x > y ? 1 : 0;
     return sort.dir === 'asc' ? cmp : -cmp;
   });
+
+  const pageCount = Math.max(Math.ceil(sorted.length / perPage), 1);
+  const currentPage = Math.min(page, pageCount);
+  const rows = sorted.slice((currentPage - 1) * perPage, currentPage * perPage);
+  const from = sorted.length === 0 ? 0 : (currentPage - 1) * perPage + 1;
+  const to = Math.min(currentPage * perPage, sorted.length);
 
   function toggle(key: SortKey) {
     setSort((s) =>
@@ -101,6 +155,42 @@ export function SensorValueTable({
 
   return (
     <Card className='overflow-hidden p-0'>
+      <div className='flex flex-wrap items-center justify-end gap-2 p-3'>
+        <Select
+          items={STATUS_OPTIONS}
+          value={status}
+          onValueChange={(v) => {
+            setStatus((v as StatusFilter) ?? 'all');
+            setPage(1);
+          }}
+        >
+          <SelectTrigger aria-label='Filter readings' className='w-40'>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {STATUS_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <div className='relative w-full max-w-64'>
+          <Icons.search className='text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2' />
+          <Input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder='Search readings'
+            aria-label='Search readings'
+            className='pl-9'
+          />
+        </div>
+      </div>
       <Table>
         <TableHeader className='bg-muted/40'>
           <TableRow>
@@ -133,7 +223,9 @@ export function SensorValueTable({
                 colSpan={columns.length}
                 className='text-muted-foreground h-24 text-center'
               >
-                No sensor readings yet
+                {readings.length === 0
+                  ? 'No sensor readings yet'
+                  : 'No readings match your filters'}
               </TableCell>
             </TableRow>
           ) : (
@@ -149,6 +241,59 @@ export function SensorValueTable({
           )}
         </TableBody>
       </Table>
+      <div className='flex flex-wrap items-center justify-between gap-3 border-t px-6 py-3 text-sm'>
+        <span>
+          {sorted.length <= 1
+            ? `Showing ${sorted.length} result${sorted.length === 1 ? '' : 's'}`
+            : `Showing ${from} to ${to} of ${sorted.length} results`}
+        </span>
+        <div className='flex items-center gap-2'>
+          <span className='text-muted-foreground'>Per page</span>
+          <Select
+            value={String(perPage)}
+            onValueChange={(v) => {
+              setPerPage(Number(v));
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className='w-20' aria-label='Per page'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PER_PAGE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {pageCount > 1 ? (
+          <div className='flex items-center gap-1'>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={currentPage <= 1}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <span className='text-muted-foreground px-2'>
+              Page {currentPage} of {pageCount}
+            </span>
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        ) : (
+          <span />
+        )}
+      </div>
     </Card>
   );
 }
