@@ -8,6 +8,8 @@ export type PlantStatus =
 
 export type MoisturePoint = { t: number; v: number };
 
+export type IrrigationDay = { day: string; count: number };
+
 export type PlantSummary = {
   id: number;
   name: string;
@@ -27,7 +29,10 @@ export type PlantSummary = {
 export type DashboardSummary = {
   plantCount: number;
   deviceCount: number;
+  /** Watering cycles started today (UTC day). */
   irrigatedToday: number;
+  /** Watering cycles started per UTC day, oldest first, last 14 days. */
+  irrigationByDay: IrrigationDay[];
   needsWater: number;
   /** Plants that are out of water, offline or have a faulty sensor. */
   attention: number;

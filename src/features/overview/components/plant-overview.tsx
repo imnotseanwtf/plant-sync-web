@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { overviewSummaryQueryOptions } from '../api/queries';
 import type { PlantStatus, PlantSummary } from '../api/types';
+import { IrrigationChart } from './irrigation-chart';
 import { MoistureSpark } from './moisture-spark';
 
 const statusBadge: Record<
@@ -174,7 +175,7 @@ export function PlantOverview() {
         <Stat
           title='Irrigations today'
           value={summary.irrigatedToday}
-          hint='Readings with the pump on (UTC day)'
+          hint='Watering cycles started (UTC day)'
         />
         <Stat
           title='Attention'
@@ -182,6 +183,8 @@ export function PlantOverview() {
           hint='Needs water, offline or sensor fault'
         />
       </div>
+
+      <IrrigationChart data={summary.irrigationByDay} />
 
       {summary.plants.length === 0 ? (
         <Card>

@@ -11,6 +11,7 @@ import type { DashboardSummary, MoisturePoint, PlantStatus, PlantSummary } from 
 
 const BUCKET_SECONDS = 15 * 60;
 const HISTORY_MS = 24 * 60 * 60 * 1000;
+const IRRIGATION_DAYS = 14;
 
 /** Most urgent first. */
 const SEVERITY: Record<PlantStatus, number> = {
@@ -25,12 +26,13 @@ const SEVERITY: Record<PlantStatus, number> = {
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   await requireUser();
 
-  const startOfDay = new Date();
-  startOfDay.setUTCHours(0, 0, 0, 0);
+  const firstDay = new Date();
+  firstDay.setUTCHours(0, 0, 0, 0);
+  firstDay.setUTCDate(firstDay.getUTCDate() - (IRRIGATION_DAYS - 1));
 
   const since = new Date(Date.now() - HISTORY_MS);
 
-  const [plants, deviceCount, irrigatedToday, historyRows] = await Promise.all([
+  const [plants, deviceCount, irrigationRows, historyRows] = await Promise.all([
     prisma.plant.findMany({
       orderBy: { name: 'asc' },
       select: {
@@ -60,7 +62,21 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       }
     }),
     prisma.deviceIdentifier.count(),
-    prisma.sensorValue.count({ where: { isIrrigating: true, createdAt: { gte: startOfDay } } }),
+    // A watering cycle starts at a pump-on reading whose previous reading (same device) was off.
+    // The window starts an hour early so a cycle that began just before it isn't counted again.
+    prisma.$queryRaw<{ day: string; count: number }[]>(Prisma.sql`
+      SELECT to_char(created_at, 'YYYY-MM-DD') AS day, count(*)::int AS count
+      FROM (
+        SELECT created_at, is_irrigating,
+               lag(is_irrigating) OVER (
+                 PARTITION BY device_identifier_id ORDER BY created_at, id
+               ) AS prev
+        FROM sensor_values
+        WHERE created_at >= ${new Date(firstDay.getTime() - 60 * 60 * 1000)}
+      ) r
+      WHERE is_irrigating AND NOT coalesce(prev, false) AND created_at >= ${firstDay}
+      GROUP BY 1
+    `),
     prisma.$queryRaw<{ device_id: string; bucket: number; avg: number }[]>(Prisma.sql`
       SELECT device_identifier_id::text AS device_id,
              (floor(extract(epoch FROM created_at) / ${Prisma.raw(String(BUCKET_SECONDS))})
@@ -72,6 +88,14 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       ORDER BY 2
     `)
   ]);
+
+  const countByDay = new Map(irrigationRows.map((r) => [r.day, r.count]));
+  const irrigationByDay = Array.from({ length: IRRIGATION_DAYS }, (_, i) => {
+    const d = new Date(firstDay);
+    d.setUTCDate(d.getUTCDate() + i);
+    const day = d.toISOString().slice(0, 10);
+    return { day, count: countByDay.get(day) ?? 0 };
+  });
 
   const historyByDevice = new Map<string, MoisturePoint[]>();
   for (const row of historyRows) {
@@ -116,7 +140,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   return {
     plantCount: plants.length,
     deviceCount,
-    irrigatedToday,
+    irrigatedToday: irrigationByDay[irrigationByDay.length - 1].count,
+    irrigationByDay,
     needsWater: summaries.filter((s) => s.status === 'needs-water').length,
     attention: summaries.filter((s) => SEVERITY[s.status] <= SEVERITY.offline).length,
     generatedAt: new Date(now).toISOString(),
