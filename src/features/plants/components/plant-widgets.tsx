@@ -11,15 +11,9 @@ import {
   ChartTooltipContent,
   type ChartConfig
 } from '@/components/ui/chart';
+import { toneClass, type Tone } from '@/lib/tone';
 import { plantOverviewQueryOptions } from '../api/queries';
 import type { PlantOverview } from '../api/types';
-
-type Tone = 'success' | 'warning' | 'danger';
-const toneClass: Record<Tone, string> = {
-  success: 'text-green-600 dark:text-green-400',
-  warning: 'text-amber-600 dark:text-amber-400',
-  danger: 'text-red-600 dark:text-red-400'
-};
 
 // Same thresholds the Filament StatsSensorValue widget used.
 const lightTone = (v: number): Tone => (v > 2000 ? 'danger' : v < 1000 ? 'warning' : 'success');

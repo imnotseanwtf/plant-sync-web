@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Icons } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toneClass, type Tone } from '@/lib/tone';
 import { overviewSummaryQueryOptions } from '../api/queries';
 import type { PlantStatus, PlantSummary } from '../api/types';
 import { IrrigationChart } from './irrigation-chart';
@@ -34,13 +35,25 @@ function timeAgo(iso: string | null, nowIso: string) {
 
 const round = (n: number) => Math.round(n * 10) / 10;
 
-function Stat({ title, value, hint }: { title: string; value: number; hint: string }) {
+function Stat({
+  label,
+  value,
+  description,
+  tone
+}: {
+  label: string;
+  value: number;
+  description: string;
+  tone?: Tone;
+}) {
   return (
     <Card>
-      <CardHeader>
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className='text-3xl font-semibold tabular-nums'>{value}</CardTitle>
-        <CardDescription>{hint}</CardDescription>
+      <CardHeader className='gap-1'>
+        <p className='text-muted-foreground text-sm'>{label}</p>
+        <p className='text-3xl font-semibold tabular-nums'>{value}</p>
+        <p className={`text-sm ${tone ? toneClass[tone] : 'text-muted-foreground'}`}>
+          {description}
+        </p>
       </CardHeader>
     </Card>
   );
@@ -170,17 +183,21 @@ export function PlantOverview() {
       <AttentionStrip plants={attentionPlants} generatedAt={summary.generatedAt} />
 
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4'>
-        <Stat title='Plants' value={summary.plantCount} hint='Being monitored' />
-        <Stat title='Devices' value={summary.deviceCount} hint='Registered ESP32 boards' />
+        <Stat label='Plants' value={summary.plantCount} description='Being monitored' />
+        <Stat label='Devices' value={summary.deviceCount} description='Registered ESP32 boards' />
         <Stat
-          title='Irrigations today'
+          label='Irrigations today'
           value={summary.irrigatedToday}
-          hint='Watering cycles started (UTC day)'
+          description='Watering cycles started (UTC day)'
+          tone='success'
         />
         <Stat
-          title='Attention'
+          label='Attention'
           value={summary.attention}
-          hint='Needs water, offline or sensor fault'
+          description={
+            summary.attention > 0 ? 'Needs water, offline or sensor fault' : 'All plants look fine'
+          }
+          tone={summary.attention > 0 ? 'danger' : 'success'}
         />
       </div>
 

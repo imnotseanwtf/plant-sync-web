@@ -1,6 +1,8 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { Icons } from '@/components/icons';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartContainer,
@@ -11,7 +13,7 @@ import {
 import type { IrrigationDay } from '../api/types';
 
 const config = {
-  count: { label: 'Watering cycles', color: 'var(--primary)' }
+  count: { label: 'Watering cycles', color: '#008FFB' }
 } satisfies ChartConfig;
 
 // Parsed as UTC and formatted as UTC so server and client render the same label.
@@ -22,24 +24,38 @@ const shortDay = (day: string) =>
     timeZone: 'UTC'
   });
 
+/** Today versus yesterday, shown as the trend badge like the plant graphs. */
+function TrendBadge({ delta }: { delta: number }) {
+  const Icon = delta >= 0 ? Icons.trendingUp : Icons.trendingDown;
+  return (
+    <Badge variant='outline'>
+      <Icon />
+      {delta >= 0 ? '+' : ''}
+      {delta}
+    </Badge>
+  );
+}
+
 /** Watering cycles started per day across all plants. */
 export function IrrigationChart({ data }: { data: IrrigationDay[] }) {
   const total = data.reduce((sum, d) => sum + d.count, 0);
+  const [yesterday, today] = data.slice(-2);
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Irrigation history</CardTitle>
+        <CardTitle>
+          Irrigation History
+          {yesterday && today && <TrendBadge delta={today.count - yesterday.count} />}
+        </CardTitle>
         <CardDescription>
-          {total} watering {total === 1 ? 'cycle' : 'cycles'} in the last {data.length} days (UTC)
+          {total} watering {total === 1 ? 'cycle' : 'cycles'} in the last {data.length} days
         </CardDescription>
       </CardHeader>
       <CardContent>
         {total === 0 ? (
-          <p className='text-muted-foreground py-12 text-center text-sm'>
-            No irrigation in this period.
-          </p>
+          <p className='text-muted-foreground py-16 text-center text-sm'>No irrigation yet.</p>
         ) : (
-          <ChartContainer config={config} className='h-48 w-full'>
+          <ChartContainer config={config}>
             <BarChart accessibilityLayer data={data}>
               <CartesianGrid vertical={false} strokeDasharray='3 3' />
               <XAxis
@@ -50,11 +66,13 @@ export function IrrigationChart({ data }: { data: IrrigationDay[] }) {
                 tickFormatter={shortDay}
                 interval='preserveStartEnd'
               />
-              <YAxis hide allowDecimals={false} />
               <ChartTooltip
                 cursor={false}
                 content={
-                  <ChartTooltipContent labelFormatter={(label) => shortDay(String(label))} />
+                  <ChartTooltipContent
+                    indicator='dashed'
+                    labelFormatter={(label) => shortDay(String(label))}
+                  />
                 }
               />
               <Bar dataKey='count' fill='var(--color-count)' radius={4} />

@@ -19,7 +19,7 @@ export function MoistureSpark({ data }: { data: MoisturePoint[] }) {
             dataKey='v'
             dot={false}
             isAnimationActive={false}
-            stroke='var(--primary)'
+            stroke='#008FFB'
             strokeWidth={1.5}
             type='monotone'
           />

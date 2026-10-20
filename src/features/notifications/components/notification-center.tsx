@@ -6,9 +6,27 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle
+} from '@/components/ui/empty';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle
+} from '@/components/ui/item';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { overviewSummaryQueryOptions } from '@/features/overview/api/queries';
 import type { DashboardSummary } from '@/features/overview/api/types';
+import { toneClass, type Tone } from '@/lib/tone';
 import { detectChanges, type AppNotification, type NotificationKind } from '../detect';
 
 const STORAGE_KEY = 'plant-sync:notifications';
@@ -16,11 +34,18 @@ const MAX_KEPT = 50;
 /** The same alert for the same plant isn't repeated within this window (flapping, other tabs). */
 const REPEAT_WINDOW_MS = 10 * 60 * 1000;
 
-const kindIcon: Record<NotificationKind, React.ComponentType<{ className?: string }>> = {
+const kindIcon: Record<NotificationKind, React.ComponentType> = {
   'needs-water': Icons.droplet,
   offline: Icons.alertCircle,
   'sensor-fault': Icons.warning,
   irrigating: Icons.droplet
+};
+
+const kindTone: Record<NotificationKind, Tone> = {
+  'needs-water': 'danger',
+  offline: 'warning',
+  'sensor-fault': 'danger',
+  irrigating: 'success'
 };
 
 // Browser storage can be blocked or empty, so every access is guarded.
@@ -95,29 +120,32 @@ export function NotificationCenter() {
 
   return (
     <Popover
-      onOpenChange={(open) =>
-        !open && unread > 0 && update((l) => l.map((n) => ({ ...n, read: true })))
-      }
+      onOpenChange={(open) => {
+        if (!open && unread > 0) update((list) => list.map((n) => ({ ...n, read: true })));
+      }}
     >
-      <PopoverTrigger
-        render={
-          <Button
-            variant='ghost'
-            size='icon'
-            className='relative'
-            aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
-          />
-        }
-      >
-        <Icons.notification className='size-4' />
-        {unread > 0 && (
-          <span className='bg-destructive absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] leading-4 font-medium text-white tabular-nums'>
-            {unread > 9 ? '9+' : unread}
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <PopoverTrigger
+              render={<Button variant='secondary' size='icon' className='relative size-8' />}
+            />
+          }
+        >
+          <Icons.notification />
+          {unread > 0 && (
+            <span className='bg-destructive absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full text-[10px] font-medium text-white tabular-nums'>
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+          <span className='sr-only'>
+            {unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
           </span>
-        )}
-      </PopoverTrigger>
-      <PopoverContent align='end' className='w-80 p-0'>
-        <div className='flex items-center justify-between border-b px-4 py-3'>
+        </TooltipTrigger>
+        <TooltipContent>Notifications</TooltipContent>
+      </Tooltip>
+      <PopoverContent align='end' className='w-80 gap-0 p-0'>
+        <div className='flex items-center justify-between border-b px-4 py-2'>
           <span className='text-sm font-medium'>Notifications</span>
           {items.length > 0 && (
             <Button variant='ghost' size='sm' onClick={() => update(() => [])}>
@@ -126,36 +154,49 @@ export function NotificationCenter() {
           )}
         </div>
         {items.length === 0 ? (
-          <p className='text-muted-foreground px-4 py-8 text-center text-sm'>
-            Nothing yet. You'll be told when a plant needs water, goes offline, has a sensor fault
-            or starts irrigating.
-          </p>
+          <Empty className='p-6'>
+            <EmptyHeader>
+              <EmptyMedia variant='icon'>
+                <Icons.notification />
+              </EmptyMedia>
+              <EmptyTitle>No notifications</EmptyTitle>
+              <EmptyDescription>
+                You'll be told when a plant needs water, goes offline, has a sensor fault or starts
+                irrigating.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
-          <ul className='max-h-96 divide-y overflow-y-auto'>
-            {items.map((n) => {
-              const Icon = kindIcon[n.kind];
-              return (
-                <li key={n.id}>
-                  <Link
-                    href={`/dashboard/plants/${n.plantId}/edit`}
-                    className='hover:bg-muted/50 flex gap-3 px-4 py-3'
+          <ScrollArea className='max-h-96'>
+            <ItemGroup className='p-1'>
+              {items.map((n) => {
+                const Icon = kindIcon[n.kind];
+                return (
+                  <Item
+                    key={n.id}
+                    size='xs'
+                    render={
+                      // oxlint-disable-next-line jsx-a11y/anchor-has-content, jsx-a11y/control-has-associated-label -- content arrives via Item's render composition
+                      <Link href={`/dashboard/plants/${n.plantId}/edit`} />
+                    }
                   >
-                    <Icon
-                      className={`mt-0.5 size-4 shrink-0 ${n.kind === 'irrigating' ? 'text-primary' : 'text-destructive'}`}
-                    />
-                    <span className='min-w-0 flex-1'>
-                      <span className='flex items-center gap-2 text-sm font-medium'>
+                    <ItemMedia variant='icon' className={toneClass[kindTone[n.kind]]}>
+                      <Icon />
+                    </ItemMedia>
+                    <ItemContent>
+                      <ItemTitle>
                         {n.title}
                         {!n.read && <span className='bg-primary size-1.5 rounded-full' />}
-                      </span>
-                      <span className='text-muted-foreground block text-xs'>{n.description}</span>
-                      <span className='text-muted-foreground block text-xs'>{ago(n.at)}</span>
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                      </ItemTitle>
+                      <ItemDescription>
+                        {n.description} · {ago(n.at)}
+                      </ItemDescription>
+                    </ItemContent>
+                  </Item>
+                );
+              })}
+            </ItemGroup>
+          </ScrollArea>
         )}
       </PopoverContent>
     </Popover>
