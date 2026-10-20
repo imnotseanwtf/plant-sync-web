@@ -55,7 +55,7 @@ export function IrrigationChart({ data }: { data: IrrigationDay[] }) {
         {total === 0 ? (
           <p className='text-muted-foreground py-16 text-center text-sm'>No irrigation yet.</p>
         ) : (
-          <ChartContainer config={config}>
+          <ChartContainer config={config} className='aspect-auto h-56 w-full'>
             <BarChart accessibilityLayer data={data}>
               <CartesianGrid vertical={false} strokeDasharray='3 3' />
               <XAxis

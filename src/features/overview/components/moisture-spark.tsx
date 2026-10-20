@@ -14,7 +14,13 @@ export function MoistureSpark({ data }: { data: MoisturePoint[] }) {
     <div className='h-8' role='img' aria-label='Moisture over the last 24 hours'>
       <ResponsiveContainer width='100%' height='100%'>
         <LineChart data={data}>
-          <YAxis hide domain={[0, 100]} />
+          <YAxis
+            hide
+            domain={[
+              (min: number) => Math.max(0, min - 5),
+              (max: number) => Math.min(100, max + 5)
+            ]}
+          />
           <Line
             dataKey='v'
             dot={false}
