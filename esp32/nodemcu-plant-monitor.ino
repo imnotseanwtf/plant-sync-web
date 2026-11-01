@@ -187,11 +187,13 @@ void loop() {
     } else {
       Serial.print("Error checking irrigation status: ");
       Serial.println(httpIrrigation.errorToString(irrigationResponseCode));
+      setRelay(false);  // No answer from the server: never leave the pump running
     }
 
     httpIrrigation.end();
   } else {
     Serial.println("WiFi Disconnected, cannot send sensor data");
+    setRelay(false);  // No connection: never leave the pump running
   }
 
   delay(3000);
