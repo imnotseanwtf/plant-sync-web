@@ -6,14 +6,15 @@ when to run the pump. People watch and manage everything from a dashboard.
 
 - [1. Tech stack](#1-tech-stack)
 - [2. How it works](#2-how-it-works)
-- [3. Getting started, step by step](#3-getting-started-step-by-step)
-- [4. Login accounts](#4-login-accounts)
-- [5. Pages](#5-pages)
-- [6. Roles and permissions](#6-roles-and-permissions)
-- [7. Device API](#7-device-api)
-- [8. Hardware and firmware](#8-hardware-and-firmware)
-- [9. Statuses and rules](#9-statuses-and-rules)
-- [10. Screenshots](#10-screenshots)
+- [3. System diagrams](#3-system-diagrams)
+- [4. Getting started, step by step](#4-getting-started-step-by-step)
+- [5. Login accounts](#5-login-accounts)
+- [6. Pages](#6-pages)
+- [7. Roles and permissions](#7-roles-and-permissions)
+- [8. Device API](#8-device-api)
+- [9. Hardware and firmware](#9-hardware-and-firmware)
+- [10. Statuses and rules](#10-statuses-and-rules)
+- [11. Screenshots](#11-screenshots)
 
 ## 1. Tech stack
 
@@ -32,89 +33,48 @@ when to run the pump. People watch and manage everything from a dashboard.
 
 ## 2. How it works
 
-```mermaid
-%%{init: {"theme":"base","themeVariables":{"fontFamily":"Poppins, Arial, sans-serif","lineColor":"#000"}}}%%
-flowchart TD
-    S1(("·")) --> A1["Sensors are read<br/>(moisture, DHT22, BH1750)"]
-    A1 --> A2["NodeMCU posts the reading<br/>POST /api/store-sensor-values"]
-    A2 --> A3[("Reading stored in PostgreSQL")]
-    A3 --> A4["Dashboard polls and shows<br/>the latest status"]
-    A4 --> A5["User watches plants<br/>and notifications"]
-    A5 --> E1(("·"))
-    classDef act fill:#fff,stroke:#000,stroke-width:1.5px,color:#000
-    classDef dec fill:#fff,stroke:#000,stroke-width:1px,color:#000
-    classDef dot fill:#fff,stroke:#000,stroke-width:1.5px,color:#fff
-    class A1,A2,A3,A4,A5 act
-    class  dec
-    class S1,E1 dot
-```
+![System overview](diagrams/system.png)
 
 **The watering loop, every few seconds:**
 
-```mermaid
-%%{init: {"theme":"base","themeVariables":{"fontFamily":"Poppins, Arial, sans-serif","lineColor":"#000"}}}%%
-flowchart TD
-    S2(("·")) --> R1["Read sensors"]
-    R1 --> D1{{"Wi-Fi connected?"}}
-    D1 -- No --> OFF["Pump OFF"]
-    D1 -- Yes --> R2["POST the reading"]
-    R2 --> R3["GET /api/irrigation-control/id"]
-    R3 --> D2{{"Server answered?"}}
-    D2 -- No --> OFF
-    D2 -- Yes --> D3{{"Moisture at or below<br/>the minimum?"}}
-    D3 -- Yes --> ON["Pump ON<br/>POST is_irrigating = true"]
-    D3 -- No --> OFF
-    ON --> M1{" "}
-    OFF --> M1
-    M1 --> W["Wait 3 s"]
-    W --> E2(("·"))
-    classDef act fill:#fff,stroke:#000,stroke-width:1.5px,color:#000
-    classDef dec fill:#fff,stroke:#000,stroke-width:1px,color:#000
-    classDef dot fill:#fff,stroke:#000,stroke-width:1.5px,color:#fff
-    class R1,R2,R3,OFF,ON,W act
-    class D1,D2,D3,M1 dec
-    class S2,E2 dot
-```
+![Watering loop](diagrams/loop.png)
 
 The pump is never left running when the board has no connection or gets no answer.
 
 **Sign-in and access:**
 
-```mermaid
-%%{init: {"theme":"base","themeVariables":{"fontFamily":"Poppins, Arial, sans-serif","lineColor":"#000"}}}%%
-flowchart TD
-    S3(("·")) --> V1["User visits a page"]
-    V1 --> D4{{"Signed in?"}}
-    D4 -- No --> V2["Sign-in page"]
-    V2 --> V3["Enter email and password"]
-    V3 --> D5{{"Credentials valid?"}}
-    D5 -- No --> V2
-    D5 -- Yes --> V4["Dashboard overview"]
-    D4 -- Yes --> V4
-    V4 --> D6{{"Has the permission<br/>for this page?"}}
-    D6 -- Yes --> V5["Page opens"]
-    D6 -- No --> V6["Hidden from the menu<br/>or blocked"]
-    V5 --> M2{" "}
-    V6 --> M2
-    M2 --> E3(("·"))
-    classDef act fill:#fff,stroke:#000,stroke-width:1.5px,color:#000
-    classDef dec fill:#fff,stroke:#000,stroke-width:1px,color:#000
-    classDef dot fill:#fff,stroke:#000,stroke-width:1.5px,color:#fff
-    class V1,V2,V3,V4,V5,V6 act
-    class D4,D5,D6,M2 dec
-    class S3,E3 dot
-```
+![Sign-in and access](diagrams/signin.png)
 
-## 3. Getting started, step by step
+## 3. System diagrams
+
+### Context diagram
+![Context diagram](diagrams/context.png)
+
+### Use case diagram
+![Use case diagram](diagrams/usecase.png)
+
+### Activity diagram: setting up a plant
+![Activity diagram](diagrams/activity.png)
+
+### Swimlane diagram: one sensor reading
+![Swimlane diagram](diagrams/swimlane.png)
+
+### Entity relationship diagram
+![Entity relationship diagram](diagrams/erd.png)
+
+### Class diagram
+![Class diagram](diagrams/class.png)
+
+## 4. Getting started, step by step
 
 1. **Install:** `bun install`. This also runs `prisma generate`.
 2. **Configure:** copy `.env.example` to `.env`. Set `AUTH_SECRET` (32 or more characters, for example from
    `openssl rand -base64 48`), the PostgreSQL connection string, and optionally `DEVICE_API_KEY`.
 3. **Create the tables:** `bunx prisma migrate deploy`.
 4. **Add starter data:** `bun run db:seed`. This creates the default roles, the login accounts in
-   section 4 and two demo plants.
+   section 5 and two demo plants.
 5. **Run:** `bun dev`, then open <http://localhost:3000>.
-6. **Sign in** with an account from section 4.
+6. **Sign in** with an account from section 5.
 7. **Add a device:** Device Identifiers → New. Name it and design its wiring. Copy the generated ID.
 8. **Add a plant:** Plants → New. Pick the device and set the moisture targets.
 9. **Flash the board:** follow `docs/nodemcu-windows-setup.md` and put the device ID and your server URL in
@@ -125,7 +85,7 @@ Other commands: `bun run user:create "<name>" <email> '<password>' [Role]` creat
 is the way back in if you lose access to every admin account. The `lint`, `typecheck` and `format` scripts
 check the code.
 
-## 4. Login accounts
+## 5. Login accounts
 
 These are the **seed defaults** from `prisma/seed.ts`. They are the same on every fresh install, so
 they are demo data only.
@@ -142,7 +102,7 @@ they are demo data only.
 - **Change these passwords, or skip the demo users, before any real deployment.** Do not put real
   credentials in this file.
 
-## 5. Pages
+## 6. Pages
 
 Every `/dashboard/...` page needs a signed-in user. The sidebar shows only what the user's role allows.
 
@@ -202,7 +162,7 @@ Every `/dashboard/...` page needs a signed-in user. The sidebar shows only what 
 - **Forms:** Name and Email, then Current password, New password and Confirm new password.
 - **Sign out:** there is currently no Sign out button in the UI.
 
-## 6. Roles and permissions
+## 7. Roles and permissions
 
 Permissions are `<action>:<resource>`. The actions are view, create, edit and delete. The resources are
 plants, devices, users and roles. Giving create, edit or delete on a resource also gives view. A user's
@@ -217,7 +177,7 @@ permissions are the combined permissions of all their roles.
 Custom roles can be made on the Roles page. The built-in ones are recreated by the migration and the
 seeder, and edits made in the app are not overwritten.
 
-## 7. Device API
+## 8. Device API
 
 These endpoints are for the board, not for people. If `DEVICE_API_KEY` is set, the board must send it in
 an `X-Device-Key` header. If it is unset, the endpoints are open.
@@ -234,7 +194,7 @@ faulty. Bad data gets a 422, an unknown device gets a 404 and success returns 20
 **Watering decision:** `true` only when the plant exists, the latest moisture reading is not null and it is
 at or below the plant's minimum. A faulty moisture sensor never turns the pump on.
 
-## 8. Hardware and firmware
+## 9. Hardware and firmware
 
 | Part | Notes |
 |---|---|
@@ -248,7 +208,7 @@ at or below the plant's minimum. A faulty moisture sensor never turns the pump o
 - Setup on Windows: `docs/nodemcu-windows-setup.md`.
 - Libraries: BH1750, DHT, ESP8266WiFi, ESP8266HTTPClient, ArduinoJson.
 
-## 9. Statuses and rules
+## 10. Statuses and rules
 
 - **Offline:** a device that has not reported for 10 minutes.
 - **Waiting:** a device that has never reported.
@@ -259,7 +219,7 @@ at or below the plant's minimum. A faulty moisture sensor never turns the pump o
 - **Watering count:** pump-on readings less than 30 minutes apart count as one watering. See
   `src/lib/irrigation.ts`.
 
-## 10. Screenshots
+## 11. Screenshots
 
 Taken from the running app with the seeded demo data (signed in as the Admin).
 
