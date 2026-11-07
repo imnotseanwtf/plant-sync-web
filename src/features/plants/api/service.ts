@@ -1,9 +1,10 @@
 'use server';
 
-import type { Prisma } from '../../../../generated/prisma/client';
+import { Prisma } from '../../../../generated/prisma/client';
 import { requirePermission, requireUser } from '@/lib/auth/current-user';
 import { fail, ok, type ActionResult } from '@/lib/action-result';
 import { dbError, paging, sortBy } from '@/lib/db-helpers';
+import { IRRIGATION_GAP_MINUTES } from '@/lib/irrigation';
 import { prisma } from '@/lib/prisma';
 import { parseDesign } from '@/lib/wiring/design';
 import type { ListFilters, ListResponse } from '@/types/resource';
@@ -149,13 +150,18 @@ export async function getPlantOverview(id: number): Promise<PlantOverview | null
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: 30
     }),
-    prisma.sensorValue.count({
-      where: {
-        deviceIdentifierId: plant.deviceIdentifierId,
-        isIrrigating: true,
-        createdAt: { gte: startOfDay }
-      }
-    }),
+    // Waterings today: pump-on readings with no earlier one within the gap (see lib/irrigation).
+    prisma.$queryRaw<{ count: number }[]>(Prisma.sql`
+      SELECT count(*)::int AS count
+      FROM (
+        SELECT created_at, lag(created_at) OVER (ORDER BY created_at, id) AS prev
+        FROM sensor_values
+        WHERE device_identifier_id = ${plant.deviceIdentifierId}::uuid AND is_irrigating
+          AND created_at >= ${new Date(startOfDay.getTime() - IRRIGATION_GAP_MINUTES * 60 * 1000)}
+      ) r
+      WHERE created_at >= ${startOfDay}
+        AND (prev IS NULL OR created_at - prev > make_interval(mins => ${IRRIGATION_GAP_MINUTES}::int))
+    `).then((r) => r[0]?.count ?? 0),
     prisma.deviceIdentifier.findUnique({
       where: { id: plant.deviceIdentifierId },
       select: { wiring: true }

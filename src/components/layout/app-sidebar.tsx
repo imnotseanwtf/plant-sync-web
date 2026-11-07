@@ -32,7 +32,6 @@ import { BrandLogo, BrandMark } from '@/components/brand-logo';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '@/components/icons';
-import { signOut } from '@/features/auth/actions';
 
 export default function AppSidebar({ user }: { user: { name: string; email: string } }) {
   const pathname = usePathname();
@@ -150,10 +149,6 @@ export default function AppSidebar({ user }: { user: { name: string; email: stri
                   >
                     <Icons.user className='mr-2 h-4 w-4' />
                     Profile &amp; password
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <Icons.logout className='mr-2 h-4 w-4' />
-                    Sign out
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>

@@ -22,7 +22,6 @@ import {
   ItemTitle
 } from '@/components/ui/item';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { overviewSummaryQueryOptions } from '@/features/overview/api/queries';
 import type { DashboardSummary } from '@/features/overview/api/types';
@@ -31,6 +30,7 @@ import { detectChanges, type AppNotification, type NotificationKind } from '../d
 
 const STORAGE_KEY = 'plant-sync:notifications';
 const MAX_KEPT = 50;
+const MAX_TOASTS = 3;
 /** The same alert for the same plant isn't repeated within this window (flapping, other tabs). */
 const REPEAT_WINDOW_MS = 10 * 60 * 1000;
 
@@ -109,9 +109,16 @@ export function NotificationCenter() {
     );
     if (fresh.length === 0) return;
 
-    for (const n of fresh) {
-      const show = n.kind === 'irrigating' ? toast.info : toast.warning;
-      show(n.title, { description: n.description });
+    // A burst of changes (e.g. coming back online) would stack toasts off-screen: summarize it.
+    if (fresh.length > MAX_TOASTS) {
+      toast.warning(`${fresh.length} plants changed status`, {
+        description: 'Open the bell to see the details.'
+      });
+    } else {
+      for (const n of fresh) {
+        const show = n.kind === 'irrigating' ? toast.info : toast.warning;
+        show(n.title, { description: n.description });
+      }
     }
     update(() => [...fresh, ...existing].slice(0, MAX_KEPT));
   }, [data, update]);
@@ -167,7 +174,7 @@ export function NotificationCenter() {
             </EmptyHeader>
           </Empty>
         ) : (
-          <ScrollArea className='max-h-96'>
+          <div className='max-h-96 overflow-y-auto'>
             <ItemGroup className='p-1'>
               {items.map((n) => {
                 const Icon = kindIcon[n.kind];
@@ -196,7 +203,7 @@ export function NotificationCenter() {
                 );
               })}
             </ItemGroup>
-          </ScrollArea>
+          </div>
         )}
       </PopoverContent>
     </Popover>

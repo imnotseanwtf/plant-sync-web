@@ -2,6 +2,7 @@
 
 import { Prisma } from '../../../../generated/prisma/client';
 import { requireUser } from '@/lib/auth/current-user';
+import { IRRIGATION_GAP_MINUTES } from '@/lib/irrigation';
 import { prisma } from '@/lib/prisma';
 import { OFFLINE_AFTER_MS } from '@/lib/sensor-health';
 import { parseDesign } from '@/lib/wiring/design';
@@ -62,19 +63,21 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       }
     }),
     prisma.deviceIdentifier.count(),
-    // A watering cycle starts at a pump-on reading whose previous reading (same device) was off.
-    // The window starts an hour early so a cycle that began just before it isn't counted again.
+    // A watering starts at a pump-on reading with no earlier pump-on reading (same device) within
+    // the gap. The window starts a gap early so a watering that began just before it isn't recounted.
     prisma.$queryRaw<{ day: string; count: number }[]>(Prisma.sql`
       SELECT to_char(created_at, 'YYYY-MM-DD') AS day, count(*)::int AS count
       FROM (
-        SELECT created_at, is_irrigating,
-               lag(is_irrigating) OVER (
+        SELECT created_at,
+               lag(created_at) OVER (
                  PARTITION BY device_identifier_id ORDER BY created_at, id
                ) AS prev
         FROM sensor_values
-        WHERE created_at >= ${new Date(firstDay.getTime() - 60 * 60 * 1000)}
+        WHERE is_irrigating
+          AND created_at >= ${new Date(firstDay.getTime() - IRRIGATION_GAP_MINUTES * 60 * 1000)}
       ) r
-      WHERE is_irrigating AND NOT coalesce(prev, false) AND created_at >= ${firstDay}
+      WHERE created_at >= ${firstDay}
+        AND (prev IS NULL OR created_at - prev > make_interval(mins => ${IRRIGATION_GAP_MINUTES}::int))
       GROUP BY 1
     `),
     prisma.$queryRaw<{ device_id: string; bucket: number; avg: number }[]>(Prisma.sql`
